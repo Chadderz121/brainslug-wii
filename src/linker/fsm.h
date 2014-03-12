@@ -1,4 +1,4 @@
-/* search.c
+/* fsm.h
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -25,48 +25,26 @@
 /* This file should ideally avoid Wii specific methods so unit testing can be
  * conducted elsewhere. */
  
-#include "search.h"
- 
-static symbol_t *Search_AllocSymbol(const char *name, size_t name_length) {
-    symbol_t *symbol;
-    
-    assert(name);
-    
-    symbol = malloc(sizeof(symbol_t));
-    
-    if (symbol != NULL) {
-        char *name_alloc;
-        
-        name_alloc = malloc(name_length + 1);
-        
-        if (name_alloc != NULL) {
-            strncpy(name_alloc, name, name_length);
-            symbol->name = name_alloc;
-            symbol->relocation = NULL;
-        } else {
-            free(symbol);
-            symbol = NULL;
-        }
-    }
-    
-    return symbol;
-}
+#ifndef FSM_H_
+#define FSM_H_
 
-static relocation_instance_t *Search_AllocSymbolRelocation(
-        symbol_t *symbol, const symbol_t *target,
-        relocation_t type, unsigned int offset) {
-    relocation_instance_t *reloc;
-    
-    assert(symbol);
-    
-    reloc = malloc(sizeof(relocation_instance_t));
-    
-    if (reloc != NULL) {
-        reloc->type = type;
-        reloc->offset = offset;
-        reloc->next = symbol->relocation;
-        symbol->relocation = reloc;
-    }
-    
-    return reloc;
-}
+#include <stddef.h>
+#include <stdint.h>
+
+#include "search.h"
+
+typedef struct fsm_t fsm_t;
+
+/* function to run on a symbol match. */
+typedef void (*fsm_match_t)(const symbol_t *symbol, const uint8_t *addr);
+
+fsm_t *FSM_Create(
+    const symbol_t *symbol, const uint8_t *data, 
+    const uint8_t *mask, size_t length);
+fsm_t *FSM_Merge(const fsm_t *left, const fsm_t *right);
+void FSM_Free(fsm_t *fsm);
+void FSM_Run(
+    const fsm_t *fsm, const uint8_t *data,
+    size_t length, fsm_match_t match_fn);
+
+#endif /* FSM_H_ */

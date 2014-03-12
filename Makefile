@@ -159,7 +159,7 @@ $(BUILD)/%.c.d: %.c
 	$(LOG)
 	-$Qmkdir -p $(dir $@)
 	$Q$(RM) $(wildcard $@)
-	$Q{ $(CC) -MP -MM -MT $@ $(CFLAGS) $< > $@ \
+	$Q{ $(CC) -MP -MM -MT $(@:.d=.o) $(CFLAGS) $< > $@ \
 	&& $(RM) $@.tmp; } \
 	|| { $(RM) $@.tmp && false; }
 
@@ -186,7 +186,6 @@ clean :
 	-$Qrm -f $(TARGET)
 	-$Qrm -f $(LIST)
 	-$Qrm -f $(MAP)
-	-$Qrm -f bin/*.til
 
 ###############################################################################
 # Phony targets
