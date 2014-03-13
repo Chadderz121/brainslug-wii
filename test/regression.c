@@ -32,6 +32,15 @@ test_t tests[] = {
     FSMTest_Create0,
     FSMTest_Create1,
     FSMTest_Create2,
+    FSMTest_Create3,
+    FSMTest_Create4,
+    FSMTest_Merge0,
+    FSMTest_Merge1,
+    FSMTest_Run0,
+    FSMTest_Run1,
+    FSMTest_Run2,
+    FSMTest_Run3,
+    FSMTest_Run4,
 };
 
 #define TEST_COUNT (sizeof(tests) / sizeof(*tests))

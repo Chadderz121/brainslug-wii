@@ -28,5 +28,14 @@
 int FSMTest_Create0(void);
 int FSMTest_Create1(void);
 int FSMTest_Create2(void);
+int FSMTest_Create3(void);
+int FSMTest_Create4(void);
+int FSMTest_Merge0(void);
+int FSMTest_Merge1(void);
+int FSMTest_Run0(void);
+int FSMTest_Run1(void);
+int FSMTest_Run2(void);
+int FSMTest_Run3(void);
+int FSMTest_Run4(void);
 
 #endif /* FSM_TEST_H_ */

@@ -46,7 +46,7 @@ struct fsm_transition_t;
 typedef struct fsm_node_t {
     unsigned int index;
     /* if symbol != NULL then transition must be. This means it's an epsilon
-     * node. */
+     * node, so doesn't consum its input. */
     const symbol_t *symbol;
     union {
         /* list of transitions given certain characters */
@@ -66,7 +66,7 @@ typedef struct {
     const fsm_node_t *left;
     const fsm_node_t *right;
     bool processed;
-} node_index_t;
+} fsm_node_index_t;
  
 static fsm_node_t *FSM_AllocNode(fsm_t *fsm) {
     fsm_node_t *node;
@@ -87,8 +87,28 @@ static fsm_node_t *FSM_AllocNode(fsm_t *fsm) {
 fsm_t *FSM_Create(
         const symbol_t *symbol, const uint8_t *data, 
         const uint8_t *mask, size_t length) {
+    typedef struct {
+        fsm_node_t *node;
+        fsm_node_t *fallback;
+    } fsm_node_build_queue_t;
+    
+    /* This algortihm warrants explanation. We're trying to create an FSM which
+     * matches data, subject to masking from bits mask. Therefore, we advance
+     * through data creating a node for each nibble. We must always consider
+     * what to do if the nibble we encounter does not match the data. Therefore,
+     * we maintain 'fallback' which is the node that we would be at if we'd
+     * started scanning 1 byte later. This means that if we encounter a nibble
+     * we weren't expecting, we should now start trying to find a match at the
+     * next location. Unfortunately, this is quite difficult to keep track of,
+     * since mask means that the bytes we encounter may be speculative. The
+     * queue structures maintain a set of pairs of nodes and fallback nodes
+     * which are to be considered in the next step. */
+
+    fsm_node_build_queue_t *queue1 = NULL, *queue1_end, *queue1_free;
+    fsm_node_build_queue_t *queue2 = NULL, *queue2_end, *queue2_free;
+    fsm_node_build_queue_t *current;
     fsm_t *fsm = NULL;
-    fsm_node_t *last, *node, *fallback, *dummy;
+    fsm_node_t *node, *fallback;
     size_t i;
     unsigned int j;
     
@@ -99,6 +119,19 @@ fsm_t *FSM_Create(
     
     if (length <= 0)
         return NULL;
+        
+    queue1 = malloc(16 * sizeof(fsm_node_build_queue_t));
+    queue2 = malloc(16 * sizeof(fsm_node_build_queue_t));
+    
+    if (queue1 == NULL)
+        goto exit_error;
+    if (queue2 == NULL)
+        goto exit_error;
+        
+    queue1_end = queue1 + 16;
+    queue2_end = queue2 + 16;
+    queue1_free = queue1;
+    queue2_free = queue2;
     
     fsm = malloc(sizeof(fsm_t));
     
@@ -108,12 +141,12 @@ fsm_t *FSM_Create(
     fsm->node_count = 0;
     
     if (mask[0] & 0xf0) {
-        dummy = FSM_AllocNode(fsm);
+        fallback = FSM_AllocNode(fsm);
         
-        if (dummy == NULL)
+        if (fallback == NULL)
             goto exit_error;
     } else
-        dummy = NULL;
+        fallback = NULL;
         
     node = FSM_AllocNode(fsm);
     
@@ -121,76 +154,170 @@ fsm_t *FSM_Create(
         goto exit_error;
         
     for (j = 0; j < 16; j++) {
-        node->payload.transition[j] = dummy;
-        if (dummy != NULL)
-            dummy->payload.transition[j] = node;
+        node->payload.transition[j] = fallback;
+        if (fallback != NULL)
+            fallback->payload.transition[j] = node;
     }
         
     fsm->initial = node;
-    last = node;
-    fallback = dummy;
+    
+    queue1[0].node = node;
+    queue1[0].fallback = NULL;
+    queue1_free++;
         
     for (i = 0; i < length; i++) {
-        if (i == 1)
-            fallback = fsm->initial;
-        else if (i == 0)
-            fallback = fsm->initial;
-        else
-            fallback = fallback->payload.transition[data[i - 1] & 0xf];
-    
-        node = FSM_AllocNode(fsm);
+        queue2_free = queue2;
         
-        if (node == NULL)
-            goto exit_error;
-        
-        for (j = 0; j < 16; j++) {
-            if ((j & (mask[i] >> 4)) == ((data[i] >> 4) & (mask[i] >> 4))) {
-                last->payload.transition[j] = node;
-            } else {
-                last->payload.transition[j] = fallback->payload.transition[j];
+        for (current = queue1; current < queue1_free; current++) {
+            fallback = current->fallback;
+            
+            for (j = 0; j < 16; j++) {
+                if ((j & (mask[i] >> 4)) == ((data[i] >> 4) & (mask[i] >> 4))) {
+                    fsm_node_build_queue_t *search;
+                    fsm_node_t *next_fallback;
+                    
+                    if (i == 0)
+                        next_fallback = NULL;
+                    else
+                        next_fallback = fallback->payload.transition[j];
+                    
+                    for (search = queue2; search < queue2_free; search++) {
+                        if (search->fallback == next_fallback) {
+                        
+                            break;
+                        }
+                    }
+                    
+                    if (search == queue2_free) {
+                        if (queue2_free == queue2_end) {
+                            fsm_node_build_queue_t *tmp;
+                            
+                            tmp = realloc(
+                                queue2, (queue2_end - queue2) * 2 *
+                                sizeof(fsm_node_build_queue_t));
+                            if (tmp == NULL)
+                                goto exit_error;
+                            queue2_end = tmp + ((queue2_end - queue2) * 2);
+                            queue2_free = tmp + (queue2_free - queue2);
+                            queue2 = tmp;
+                        }
+                        
+                        queue2_free++;
+                        
+                        search->node = FSM_AllocNode(fsm);
+                        
+                        if (search->node == NULL)
+                            goto exit_error;
+                            
+                        search->fallback = next_fallback;
+                        
+                        assert(queue2_free <= queue2_end);
+                    }
+                    
+                    assert(search->fallback == next_fallback);
+                    
+                    current->node->payload.transition[j] = search->node;
+                } else if (fallback != NULL) {
+                    current->node->payload.transition[j] =
+                        fallback->payload.transition[j];
+                } else
+                    assert(i == 0);
             }
         }
         
-        last = node;
-        if (i == 0)
-            fallback = NULL;
-        else
-            fallback = fallback->payload.transition[data[i - 1] >> 4];
+        queue1_free = queue1;
         
-        node = FSM_AllocNode(fsm);
-        
-        if (node == NULL)
-            goto exit_error;
-        
-        for (j = 0; j < 16; j++) {
-            if ((j & (mask[i] & 0xf)) == ((data[i] & 0xf) & (mask[i] & 0xf))) {
-                last->payload.transition[j] = node;
-            } else if (fallback != NULL) {
-                last->payload.transition[j] = fallback->payload.transition[j];
-            } else {
-                last->payload.transition[j] = fsm->initial;
+        for (current = queue2; current < queue2_free; current++) {
+            fallback = current->fallback;
+            
+            for (j = 0; j < 16; j++) {
+                if ((j & (mask[i] & 0xf)) ==
+                    ((data[i] & 0xf) & (mask[i] & 0xf))) {
+                    
+                    fsm_node_build_queue_t *search;
+                    fsm_node_t *next_fallback;
+                    
+                    if (i == 0)
+                        next_fallback = fsm->initial;
+                    else
+                        next_fallback = fallback->payload.transition[j];
+                    
+                    for (search = queue1; search < queue1_free; search++) {
+                        if (search->fallback == next_fallback) {
+                        
+                            break;
+                        }
+                    }
+                    
+                    if (search == queue1_free) {
+                        if (queue1_free == queue1_end) {
+                            fsm_node_build_queue_t *tmp;
+                            
+                            tmp = realloc(
+                                queue1, (queue1_end - queue1) * 2 *
+                                sizeof(fsm_node_build_queue_t));
+                            if (tmp == NULL)
+                                goto exit_error;
+                            queue1_end = tmp + ((queue1_end - queue1) * 2);
+                            queue1_free = tmp + (queue1_free - queue1);
+                            queue1 = tmp;
+                        }
+                        
+                        queue1_free++;
+                        
+                        search->node = FSM_AllocNode(fsm);
+                        
+                        if (search->node == NULL)
+                            goto exit_error;
+                            
+                        search->fallback = next_fallback;
+                        
+                        assert(queue1_free <= queue1_end);
+                    }
+                    
+                    assert(search->fallback == next_fallback);
+                    
+                    current->node->payload.transition[j] = search->node;
+                } else if (fallback != NULL) {
+                    current->node->payload.transition[j] =
+                        fallback->payload.transition[j];
+                } else {
+                    current->node->payload.transition[j] = fsm->initial;
+                }
             }
         }
-        
-        last = node;
     }
     
-    node->symbol = symbol;
-    node->payload.next = fallback->payload.transition[data[i - 1] & 0xf];
+    for (current = queue1; current < queue1_free; current++) {
+        fallback = current->fallback;
+        
+        assert(current->node);
+        assert(current->fallback);
+                
+        current->node->symbol = symbol;
+        current->node->payload.next = fallback;
+    }
+    
+    free(queue1);
+    free(queue2);
         
     return fsm;
 exit_error:
 
-    if (fsm != NULL) {
+    if (fsm != NULL)
         FSM_Free(fsm);
-    }
+    
+    if (queue1 != NULL)
+        free(queue1);
+    if (queue2 != NULL)
+        free(queue2);
 
     return NULL;
 }
  
 static bool FSM_BuildMergeNodeTransitional(
         fsm_t *fsm, const fsm_t *left, const fsm_t *right,
-        node_index_t *node_index, fsm_node_t *node,
+        fsm_node_index_t *node_index, fsm_node_t *node,
         const fsm_node_t *left_node, const fsm_node_t *right_node) {
     unsigned int i;
     
@@ -228,7 +355,7 @@ static bool FSM_BuildMergeNodeTransitional(
 }
 static bool FSM_BuildMergeNodeEpsilon(
         fsm_t *fsm, const fsm_t *left, const fsm_t *right,
-        node_index_t *node_index, fsm_node_t *node,
+        fsm_node_index_t *node_index, fsm_node_t *node,
         const fsm_node_t *left_node, const fsm_node_t *right_node) {
     assert(fsm);
     assert(node_index);
@@ -286,7 +413,7 @@ static bool FSM_BuildMergeNodeEpsilon(
 }
 static bool FSM_BuildMergeNode(
         fsm_t *fsm, const fsm_t *left, const fsm_t *right,
-        node_index_t *node_index, fsm_node_t *node,
+        fsm_node_index_t *node_index, fsm_node_t *node,
         const fsm_node_t *left_node, const fsm_node_t *right_node) {
     
     assert(fsm);
@@ -307,7 +434,7 @@ static bool FSM_BuildMergeNode(
 }
 
 fsm_t *FSM_Merge(const fsm_t *left, const fsm_t *right) {
-    node_index_t *node_index = NULL;
+    fsm_node_index_t *node_index = NULL;
     fsm_t *fsm = NULL;
     unsigned int processed_nodes, i, common_index;
     
@@ -319,7 +446,7 @@ fsm_t *FSM_Merge(const fsm_t *left, const fsm_t *right) {
     fsm->node_count = 0;
     
     node_index = 
-        calloc(left->node_count * right->node_count, sizeof(node_index_t));
+        calloc(left->node_count * right->node_count, sizeof(fsm_node_index_t));
         
     if (node_index == NULL)
         goto exit_error;
@@ -466,6 +593,13 @@ void FSM_Run(
         state = state->payload.transition[data[i] >> 4];
         assert(state->symbol == NULL);
         state = state->payload.transition[data[i] & 0xf];
+    }
+    
+    /* process epsilons */
+    while (state->symbol != NULL) {
+        match_fn(state->symbol, data + i - state->symbol->offset);
+        state = state->payload.next;
+        assert(state != NULL);
     }
 }
 
