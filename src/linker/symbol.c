@@ -43,4 +43,46 @@ void Symbol_ParseFile(FILE *file) {
 	
 }
 
+static symbol_t *Symbol_AllocSymbol(const char *name, size_t name_length) {
+    symbol_t *symbol;
+    
+    assert(name);
+    
+    symbol = malloc(sizeof(symbol_t));
+    
+    if (symbol != NULL) {
+        char *name_alloc;
+        
+        name_alloc = malloc(name_length + 1);
+        
+        if (name_alloc != NULL) {
+            strncpy(name_alloc, name, name_length);
+            symbol->name = name_alloc;
+            symbol->relocation = NULL;
+        } else {
+            free(symbol);
+            symbol = NULL;
+        }
+    }
+    
+    return symbol;
+}
 
+static relocation_instance_t *Symbol_AllocSymbolRelocation(
+        symbol_t *symbol, const symbol_t *target,
+        symbol_relocation_t type, unsigned int offset) {
+    symbol_relocation_t *reloc;
+    
+    assert(symbol);
+    
+    reloc = malloc(sizeof(symbol_relocation_t));
+    
+    if (reloc != NULL) {
+        reloc->type = type;
+        reloc->offset = offset;
+        reloc->next = symbol->relocation;
+        symbol->relocation = reloc;
+    }
+    
+    return reloc;
+}

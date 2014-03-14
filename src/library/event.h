@@ -32,7 +32,7 @@
 #ifndef EVENT_H_
 #define EVENT_H_
 
-#inlcude <assert.h>
+#include <assert.h>
 #include <ogc/semaphore.h>
 #include <stdbool.h>
 
@@ -41,11 +41,11 @@ typedef struct {
     sem_t sem;
 } event_t;
 
-int Event_Init(event_t *event);
-int Event_Destroy(event_t *event);
-int Event_Wait(event_t *event);
-int Event_Trigger(event_t *event);
-int Event_Reset(event_t *event);
+static int Event_Init(event_t *event);
+static int Event_Destroy(event_t *event);
+static int Event_Wait(event_t *event);
+static int Event_Trigger(event_t *event);
+static int Event_Reset(event_t *event);
 
 static inline int Event_Init(event_t *event) {
     assert(event);

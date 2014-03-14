@@ -43,7 +43,7 @@ int main(void) {
     
     /* The game's boot loader is statically loaded at 0x81200000, so we'd better
      * not start mallocing there! */
-    SYS_SetArena1High((void*)0x81200000);
+    SYS_SetArena1Hi((void*)0x81200000);
     
     /* main thread is UI, so set thread prior to UI */
     LWP_SetThreadPriority(LWP_GetSelf(), THREAD_PRIO_UI);
@@ -91,7 +91,7 @@ int main(void) {
     
     
     printf("Waiting for game disk... ");
-    Event_Wait(&aploader_main);
+    Event_Wait(&apploader_event_disk_id);
     printf(
         "%c%c%c%c\n",
         os0->disc.gamename[0], os0->disc.gamename[1],
@@ -99,6 +99,15 @@ int main(void) {
     
     
     free(frame_buffer);
+
+    Event_Wait(&apploader_event_complete);
+
+    if (apploader_game_entry_fn == NULL) {
+        printf("Error... entry point is NULL.\n");
+    } else {
+        SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);
+        apploader_game_entry_fn();
+    }
     
     return 0;
 }

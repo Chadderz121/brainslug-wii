@@ -98,7 +98,7 @@ typedef struct {
     os_thread_info_t threads; /* 0xc0 */
 } os_early_globals_t;
 
-os_early_globals_t * const os0 = (os_early_globals_t *)0x80000000;
+static os_early_globals_t * const os0 = (os_early_globals_t *)0x80000000;
 
 typedef struct {
     uint8_t padding0[0x100];
@@ -130,6 +130,6 @@ typedef struct {
     uint32_t return_code;
 } os_late_globals_t;
 
-os_late_globals_t * const os1 = (os_late_globals_t *)0x80003000;
+static os_late_globals_t * const os1 = (os_late_globals_t *)0x80003000;
 
 #endif /* DOLPHIN_OS_H_ */

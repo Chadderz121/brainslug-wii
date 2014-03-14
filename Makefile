@@ -16,14 +16,17 @@ ifeq ($(strip $(DEVKITPPC)),)
 endif
 
 ifeq ($(OS),Windows_NT)
-  PATH := $(DEVKITPPC)/bin:$(PORTLIBS)/bin:$(PATH)
   $(info Compiling from $(OS))
+
+  PORTLIBS := $(DEVKITPRO)/portlibs/ppc
+  PATH := $(DEVKITPPC)/bin:$(PORTLIBS)/bin:$(PATH)
   ifeq ($(DEVKITPRO),$(subst :, ,$(DEVKITPRO)))
     DEVKITPRO := $(patsubst /$(firstword $(subst /, ,$(DEVKITPRO)))/%,$(firstword $(subst /, ,$(DEVKITPRO))):/%,$(DEVKITPRO))
     $(info DEVKITPRO corrected to $(DEVKITPRO))
   else
     $(info DEVKITPRO is $(DEVKITPRO))
   endif
+  PORTLIBS := $(DEVKITPRO)/portlibs/ppc
   ifeq ($(DEVKITPPC),$(subst :, ,$(DEVKITPPC)))
     DEVKITPPC := $(patsubst /$(firstword $(subst /, ,$(DEVKITPPC)))/%,$(firstword $(subst /, ,$(DEVKITPPC))):/%,$(DEVKITPPC))
     $(info DEVKITPPC corrected to $(DEVKITPPC))
@@ -31,8 +34,9 @@ ifeq ($(OS),Windows_NT)
     $(info DEVKITPPC is $(DEVKITPPC))
   endif
 else
-  $(info Compiling from $(OS))
+  $(info Compiling from Unix)
 
+  PORTLIBS := $(DEVKITPRO)/portlibs/ppc
   $(info DEVKITPRO is $(DEVKITPRO))
   $(info DEVKITPPC is $(DEVKITPPC))
 endif
@@ -86,7 +90,7 @@ MAP    ?= $(BIN)/boot.map
 # Variable init
 
 # The names of libraries to use.
-LIBS     := ogc wiiuse bte m
+LIBS     := ogc wiiuse bte m mxml
 # The source files to compile.
 SRC      :=
 # Phony targets
@@ -96,7 +100,8 @@ INC_DIRS := include
 # Library directories
 LIB_DIRS := $(DEVKITPPC) $(DEVKITPPC)/powerpc-eabi \
             $(DEVKITPRO)/libogc $(DEVKITPRO)/libogc/lib/wii \
-            $(wildcard $(DEVKITPPC)/lib/gcc/powerpc-eabi/*)
+            $(wildcard $(DEVKITPPC)/lib/gcc/powerpc-eabi/*) \
+            $(PORTLIBS)
 
 ###############################################################################
 # Rule to make everything.
@@ -136,7 +141,7 @@ $(BIN)/boot.elf : $(BUILD)/output.elf $(BIN)
 	$Q$(PREFIX)strip -g $@
 
 # Rule to make the elf file.
-$(BUILD)/output.elf : $(OBJECTS) $(LINKER) $(BUILD) $(BIN)
+$(BUILD)/output.elf : $(OBJECTS) $(LINKER) $(BUILD)
 	$(LOG)
 	$Q$(LD) $(OBJECTS) $(LDFLAGS) -o $@ 
 

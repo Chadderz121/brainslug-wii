@@ -25,17 +25,45 @@
 #include "apploader.h"
 
 #include <errno.h>
+#include <ogc/cache.h>
 #include <ogc/lwp.h>
+#include <ogc/lwp_watchdog.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "di/di.h"
 #include "library/dolphin_os.h"
 #include "library/event.h"
+#include "linker/module.h"
 #include "threads.h"
 
-event_t apploader_event_disk_id;
+typedef struct {
+    uint32_t boot_info_count;
+    uint32_t partition_info_offset;
+} contents_t;
+
+typedef struct {
+    uint32_t offset;
+    uint32_t length;
+} partition_info_t;
+
+// types for the four methods called on the game's apploader
+typedef void (*apploader_report_t)(const char *format, ...);
+typedef void (*apploader_init_t)(apploader_report_t report_fn);
+typedef int (*apploader_main_t)(void **dst, int *size, int *offset);
+typedef apploader_game_entry_t (*apploader_final_t)(void);
+typedef void (*apploader_entry_t)(
+    apploader_init_t *init,
+    apploader_main_t *main,
+    apploader_final_t *final);
 
 static void *aploader_main(void *arg);
+
+event_t apploader_event_disk_id;
+event_t apploader_event_complete;
+apploader_game_entry_t apploader_game_entry_fn;
+
 static char apploader_ipc_tmd[18944] ATTRIBUTE_ALIGN(32);
 
 int apploader_run_background(void) {
@@ -56,25 +84,13 @@ int apploader_run_background(void) {
     return 0;
 }
 
-typedef struct {
-    uint32_t boot_info_count;
-    uint32_t partition_info_offset;
-} contents_t;
+void apploader_report(const char *format, ...) {
+    va_list args;
 
-typedef struct {
-    uint32_t offset;
-    uint32_t length;
-} partition_info_t;
-
-// types for the four methods called on the game's apploader
-typedef void (*app_init_t)(void (*report)(const char *fmt, ...));
-typedef int (*app_main_t)(void **dst, int *size, int *offset);
-typedef void (*game_entry_t)(void);
-typedef game_entry_t (*app_final_t)(void);
-typedef void (*app_entry_t)(
-    app_init_t *init,
-    app_main_t* main,
-    app_final_t* final);
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+}
     
 static void *aploader_main(void *arg) {
     int ret, i;
@@ -83,11 +99,10 @@ static void *aploader_main(void *arg) {
     uint32_t ipc_buffer[8] ATTRIBUTE_ALIGN(32);
     partition_info_t *boot_partition;
     tmd *dvd_tmd;
-    app_init_t app_init;
-    app_main_t app_main;
-    app_final_t app_final;
-    app_entry_t app_entry;
-    game_entry_t game_entry;
+    apploader_init_t fn_init;
+    apploader_main_t fn_main;
+    apploader_final_t fn_final;
+    apploader_entry_t fn_entry;
     
     do {
         ret = DI_Init();
@@ -114,12 +129,12 @@ static void *aploader_main(void *arg) {
     do {
         ret = DI_ReadUnencrypted(
             ipc_partition_info, sizeof(ipc_partition_info),
-            ipc_toc->part_info_offset);
+            ipc_toc->partition_info_offset);
     } while (ret < 0);
     
     boot_partition = NULL;
     for (i = 0; i < ipc_toc->boot_info_count; i++) {
-        if (ipc_partition_info[i].len == 0) {
+        if (ipc_partition_info[i].length == 0) {
             boot_partition = &ipc_partition_info[i];
         }
     }
@@ -129,7 +144,7 @@ static void *aploader_main(void *arg) {
             boot_partition->offset, (void *)apploader_ipc_tmd);
     } while (ret < 0);
     
-    dvd_tmd = SIGNATURE_PAYLOAD((u32*)apploader_ipc_tmd);
+    dvd_tmd = SIGNATURE_PAYLOAD(apploader_ipc_tmd);
     
     do {
         ret = DI_Read(ipc_buffer, sizeof(ipc_buffer), 0x2440 / 4);
@@ -141,30 +156,31 @@ static void *aploader_main(void *arg) {
             (void*)0x81200000, (ipc_buffer[5] + 31) & ~31, 0x2460 / 4);
     } while (ret < 0);
     
-    app_entry = (app_entry_t)ipc_buffer[4];
+    fn_entry = (apploader_entry_t)ipc_buffer[4];
     
-    app_entry(&app_init, &app_main, &app_final);
-    
-    app_init(&printf);
+    fn_entry(&fn_init, &fn_main, &fn_final);
+    fn_init(&apploader_report);
     
     settime(secs_to_ticks(time(NULL) - 946684800));
+
+    Event_Wait(&module_list_loaded);
     
     while (1) {
         void* destination = 0;
         int length = 0, offset = 0;
         
-        ret = app_main(&destination, &len, &offset);
+        ret = fn_main(&destination, &length, &offset);
         if (!ret)
             break;
 
-        if (destination >= (void *)&parameters)
-            destination = (char *)destination - PARAMETERS_SIZE;
+        if (destination >= (void *)(0x81800000 - module_list_size))
+            destination = (char *)destination - module_list_size;
 
         do {
-            ret = DI_Read(destination, len, offset / 4 << 2);
+            ret = DI_Read(destination, length, offset & ~3);
         } while (ret < 0);
         
-        DCFlushRange(destination, len);
+        DCFlushRange(destination, length);
     }
     
     switch (os0->disc.gamename[3]) {
@@ -185,9 +201,9 @@ static void *aploader_main(void *arg) {
     os0->info.version = 1;
     os0->info.mem1_size = 0x01800000;
     os0->info.console_type = 1 + ((*(uint32_t *)0xcc00302c) >> 28);
-    os0->info.arenahigh = (char *)os0->info.arenahigh - PARAMETERS_SIZE;
-    os0->info.fst = (char *)os0->info.fst - PARAMETERS_SIZE;
-    os0->info.fst_size += PARAMETERS_SIZE;
+    os0->info.arena_high = os0->info.arena_high - module_list_size;
+    os0->info.fst = (char *)os0->info.fst - module_list_size;
+    os0->info.fst_size += module_list_size;
 
     os0->threads.debug_monitor_location = (void *)0x81800000;
     os0->threads.simulated_memory_size = 0x01800000;
@@ -195,14 +211,13 @@ static void *aploader_main(void *arg) {
     os0->threads.cpu_speed = 0x2B73A840;
 
     os1->fst = os0->info.fst;
-
     memcpy(os1->application_name, os0->disc.gamename, 4);
 
     DCFlushRange(os0, 0x3f00);
     
-    game_entry = app_final();
-    
-    
+    apploader_game_entry_fn = fn_final();
+
+    Event_Trigger(&apploader_event_complete);
     
     return NULL;
 }
