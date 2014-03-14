@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "../src/linker/search.h"
+#include "../src/linker/symbol.h"
 
 static void FSMTest_Print(const fsm_t *fsm) {
     fsm_node_t *nodes[fsm->node_count];

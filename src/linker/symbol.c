@@ -1,4 +1,4 @@
-/* fsm.h
+/* symbol.c
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -25,26 +25,22 @@
 /* This file should ideally avoid Wii specific methods so unit testing can be
  * conducted elsewhere. */
  
-#ifndef FSM_H_
-#define FSM_H_
-
-#include <stddef.h>
-#include <stdint.h>
-
 #include "symbol.h"
 
-typedef struct fsm_t fsm_t;
+#include <stdio.h>
 
-/* function to run on a symbol match. */
-typedef void (*fsm_match_t)(const symbol_t *symbol, const uint8_t *addr);
+static symbol_t *global_symbols = NULL;
 
-fsm_t *FSM_Create(
-    const symbol_t *symbol, const uint8_t *data, 
-    const uint8_t *mask, size_t length);
-fsm_t *FSM_Merge(const fsm_t *left, const fsm_t *right);
-void FSM_Free(fsm_t *fsm);
-void FSM_Run(
-    const fsm_t *fsm, const uint8_t *data,
-    size_t length, fsm_match_t match_fn);
+/* Symbol files have the following basic format:
+ * #symbol must appear at the start of the first line.
+ * # lines define comments (must have # at the start of line).
+ * Example:
+ *  #symbol IOS symbols. By Chadderz
+ *  IOS_Ioctl(9420FFFF 48000001 4E800020, size c, offset 0, B 4 IOS_Ioctlv)
+ */
 
-#endif /* FSM_H_ */
+void Symbol_ParseFile(FILE *file) {
+	
+}
+
+
