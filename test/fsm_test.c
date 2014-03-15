@@ -1,4 +1,4 @@
-/* fsm.c
+/* fsm_test.c
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick

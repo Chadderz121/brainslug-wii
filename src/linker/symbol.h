@@ -88,21 +88,28 @@ typedef enum {
     R_PPC_EMB_RELSDA = 116,
 } relocation_t;
 
-struct symbol_t;
-struct symbol_relocation_t;
+typedef unsigned int symbol_index_t;
 
-typedef struct symbol_t {
+typedef struct symbol_relocation_t {
+    const char *symbol;
+    relocation_t type;
+    size_t offset;
+    const struct symbol_relocation_t *next;
+} symbol_relocation_t;
+
+typedef struct {
+    symbol_index_t index;
     const char *name;
     size_t size;
     size_t offset;
-    const struct symbol_relocation_t *relocation;
+    const uint8_t *data;
+    const uint8_t *mask;
+    size_t data_size;
+    const symbol_relocation_t *relocation;
 } symbol_t;
 
-typedef struct symbol_relocation_t {
-    const symbol_t *symbol;
-    relocation_t type;
-    unsigned int offset;
-    const struct symbol_relocation_t *next;
-} symbol_relocation_t;
+extern symbol_index_t symbol_count;
+
+symbol_t *Symbol_GetSymbol(symbol_index_t index);
 
 #endif /* SYMBOL_H_ */

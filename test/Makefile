@@ -43,7 +43,7 @@ TARGET ?= $(BIN)/regression$(EXT)
 # Variable init
 
 # The names of libraries to use.
-LIBS     :=
+LIBS     := mxml
 # The source files to compile.
 SRC      :=
 # Phony targets

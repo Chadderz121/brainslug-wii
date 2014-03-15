@@ -1,7 +1,9 @@
-WD     := $(dir $(lastword $(MAKEFILE_LIST)))
+W     := $(dir $(lastword $(MAKEFILE_LIST)))
 WD_SRC := $(WD)
 
 SRC  += $(WD)fsm_test.c
 INCLUDE += $(WD)/../src/linker
 TEST += 0 1 2 3 4 5 6 7 8 9 10 11
 SRC  += $(WD)regression.c
+SRC  += $(WD)symbol_test.c
+TEST += 12

@@ -1,4 +1,4 @@
-/* regression.c
+/* symbol_test.c
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -22,41 +22,23 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-
-#include "fsm_test.h"
+#include "../src/linker/symbol.c"
+ 
 #include "symbol_test.h"
 
-typedef int (*test_t)(void);
+#include <stdio.h>
+#include <stdint.h>
 
-test_t tests[] = {
-    FSMTest_Create0,
-    FSMTest_Create1,
-    FSMTest_Create2,
-    FSMTest_Create3,
-    FSMTest_Create4,
-    FSMTest_Merge0,
-    FSMTest_Merge1,
-    FSMTest_Run0,
-    FSMTest_Run1,
-    FSMTest_Run2,
-    FSMTest_Run3,
-    FSMTest_Run4,
-    SymbolTest_Parse0,
-};
+#include "../src/linker/symbol.h"
 
-#define TEST_COUNT (sizeof(tests) / sizeof(*tests))
- 
-int main(int argc, char *argv[]) {
-    int test;
-    
-    if (argc != 2)
-        return 1;
-        
-    test = atoi(argv[1]);
-    
-    if (test < 0 || test >= TEST_COUNT)
-        return 2;
-        
-    return tests[test]();
+int SymbolTest_Parse0(void) {
+    FILE *file;
+
+    file = fopen("symbol_test_parse0.xml", "r");
+
+    if (!file)
+        return 6;
+    if (!Symbol_ParseFile(file))
+        return 101;
+    return 0;
 }
