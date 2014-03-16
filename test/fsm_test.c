@@ -22,14 +22,19 @@
  * SOFTWARE.
  */
 
+
+#include "../src/linker/symbol.h"
+
+#define Symbol_GetSymbol(index) (&fsm_test_symbol[index])
+
+symbol_t fsm_test_symbol[3];
+
 #include "../src/linker/fsm.c"
  
 #include "fsm_test.h"
 
 #include <stdio.h>
 #include <stdint.h>
-
-#include "../src/linker/symbol.h"
 
 static void FSMTest_Print(const fsm_t *fsm) {
     fsm_node_t *nodes[fsm->node_count];
@@ -52,7 +57,7 @@ static void FSMTest_Print(const fsm_t *fsm) {
 #endif
             for (i = 0; i < fsm->node_count; i++) {
                 if (nodes[i] != NULL) {
-                    if (nodes[i]->symbol == NULL) {
+                    if (nodes[i]->symbol == SYMBOL_NULL) {
                         /* transitional node */                    
                         for (j = 0; j < 16; j++) {
                             fsm_node_t *node;
@@ -96,28 +101,44 @@ static void FSMTest_Print(const fsm_t *fsm) {
         fsm->node_count, fsm->initial->index);
     
     for (i = 0; i < fsm->node_count; i++) {
-        if (nodes[i]->symbol == NULL) {
+        if (nodes[i]->symbol == SYMBOL_NULL) {
             printf(
                 "node %u: ["
                 "%d, %d, %d, %d, %d, %d, %d, %d, "
                 "%d, %d, %d, %d, %d, %d, %d, %d]\n",
                 i,
-                nodes[i]->payload.transition[0] ? (int)nodes[i]->payload.transition[0]->index : -1,
-                nodes[i]->payload.transition[1] ? (int)nodes[i]->payload.transition[1]->index : -1,
-                nodes[i]->payload.transition[2] ? (int)nodes[i]->payload.transition[2]->index : -1,
-                nodes[i]->payload.transition[3] ? (int)nodes[i]->payload.transition[3]->index : -1,
-                nodes[i]->payload.transition[4] ? (int)nodes[i]->payload.transition[4]->index : -1,
-                nodes[i]->payload.transition[5] ? (int)nodes[i]->payload.transition[5]->index : -1,
-                nodes[i]->payload.transition[6] ? (int)nodes[i]->payload.transition[6]->index : -1,
-                nodes[i]->payload.transition[7] ? (int)nodes[i]->payload.transition[7]->index : -1,
-                nodes[i]->payload.transition[8] ? (int)nodes[i]->payload.transition[8]->index : -1,
-                nodes[i]->payload.transition[9] ? (int)nodes[i]->payload.transition[9]->index : -1,
-                nodes[i]->payload.transition[10] ? (int)nodes[i]->payload.transition[10]->index : -1,
-                nodes[i]->payload.transition[11] ? (int)nodes[i]->payload.transition[11]->index : -1,
-                nodes[i]->payload.transition[12] ? (int)nodes[i]->payload.transition[12]->index : -1,
-                nodes[i]->payload.transition[13] ? (int)nodes[i]->payload.transition[13]->index : -1,
-                nodes[i]->payload.transition[14] ? (int)nodes[i]->payload.transition[14]->index : -1,
-                nodes[i]->payload.transition[15] ? (int)nodes[i]->payload.transition[15]->index : -1);
+                nodes[i]->payload.transition[0] ?
+                    (int)nodes[i]->payload.transition[0]->index : -1,
+                nodes[i]->payload.transition[1] ?
+                    (int)nodes[i]->payload.transition[1]->index : -1,
+                nodes[i]->payload.transition[2] ?
+                    (int)nodes[i]->payload.transition[2]->index : -1,
+                nodes[i]->payload.transition[3] ?
+                    (int)nodes[i]->payload.transition[3]->index : -1,
+                nodes[i]->payload.transition[4] ?
+                    (int)nodes[i]->payload.transition[4]->index : -1,
+                nodes[i]->payload.transition[5] ?
+                    (int)nodes[i]->payload.transition[5]->index : -1,
+                nodes[i]->payload.transition[6] ?
+                    (int)nodes[i]->payload.transition[6]->index : -1,
+                nodes[i]->payload.transition[7] ?
+                    (int)nodes[i]->payload.transition[7]->index : -1,
+                nodes[i]->payload.transition[8] ?
+                    (int)nodes[i]->payload.transition[8]->index : -1,
+                nodes[i]->payload.transition[9] ?
+                    (int)nodes[i]->payload.transition[9]->index : -1,
+                nodes[i]->payload.transition[10] ?
+                    (int)nodes[i]->payload.transition[10]->index : -1,
+                nodes[i]->payload.transition[11] ?
+                    (int)nodes[i]->payload.transition[11]->index : -1,
+                nodes[i]->payload.transition[12] ?
+                    (int)nodes[i]->payload.transition[12]->index : -1,
+                nodes[i]->payload.transition[13] ?
+                    (int)nodes[i]->payload.transition[13]->index : -1,
+                nodes[i]->payload.transition[14] ?
+                    (int)nodes[i]->payload.transition[14]->index : -1,
+                nodes[i]->payload.transition[15] ?
+                    (int)nodes[i]->payload.transition[15]->index : -1);
         } else {
             printf(
                 "node %u: [%d]\n",
@@ -129,11 +150,16 @@ static void FSMTest_Print(const fsm_t *fsm) {
 
 int FSMTest_Create0(void) {
     fsm_t *fsm;
-    symbol_t symbol;
+    symbol_t *sym;
     uint8_t data[] = { 0x00, 0x01, 0x02, 0x03 };
     uint8_t mask[] = { 0xff, 0xff, 0xff, 0xff };
-    
-    fsm = FSM_Create(&symbol, data, mask, sizeof(data));
+
+    sym = Symbol_GetSymbol(0);
+    sym->data = data;
+    sym->mask = mask;
+    sym->data_size = sizeof(data);
+        
+    fsm = FSM_Create(0);
     
     if (fsm) {
         FSM_Free(fsm);
@@ -144,11 +170,16 @@ int FSMTest_Create0(void) {
 
 int FSMTest_Create1(void) {
     fsm_t *fsm;
-    symbol_t symbol;
+    symbol_t *sym;
     uint8_t data[] = { 0x00, 0x01, 0x00, 0x01 };
     uint8_t mask[] = { 0xff, 0xff, 0xff, 0xff };
     
-    fsm = FSM_Create(&symbol, data, mask, sizeof(data));
+    sym = Symbol_GetSymbol(0);
+    sym->data = data;
+    sym->mask = mask;
+    sym->data_size = sizeof(data);
+        
+    fsm = FSM_Create(0);
     
     if (fsm) {
         FSM_Free(fsm);
@@ -159,11 +190,16 @@ int FSMTest_Create1(void) {
 
 int FSMTest_Create2(void) {
     fsm_t *fsm;
-    symbol_t symbol;
+    symbol_t *sym;
     uint8_t data[] = { 0x00, 0x01, 0x00, 0x00 };
     uint8_t mask[] = { 0x00, 0xff, 0xff, 0x00 };
     
-    fsm = FSM_Create(&symbol, data, mask, sizeof(data));
+    sym = Symbol_GetSymbol(0);
+    sym->data = data;
+    sym->mask = mask;
+    sym->data_size = sizeof(data);
+        
+    fsm = FSM_Create(0);
     
     if (fsm) { 
         FSM_Free(fsm);
@@ -174,11 +210,16 @@ int FSMTest_Create2(void) {
 
 int FSMTest_Create3(void) {
     fsm_t *fsm;
-    symbol_t symbol;
+    symbol_t *sym;
     uint8_t data[] = { 0x00, 0x00, 0x00, 0x00 };
     uint8_t mask[] = { 0x00, 0xff, 0xff, 0x00 };
     
-    fsm = FSM_Create(&symbol, data, mask, sizeof(data));
+    sym = Symbol_GetSymbol(0);
+    sym->data = data;
+    sym->mask = mask;
+    sym->data_size = sizeof(data);
+    
+    fsm = FSM_Create(0);
     
     if (fsm) { 
         FSM_Free(fsm);
@@ -189,11 +230,16 @@ int FSMTest_Create3(void) {
 
 int FSMTest_Create4(void) {
     fsm_t *fsm;
-    symbol_t symbol;
+    symbol_t *sym;
     uint8_t data[] = { 0x10, 0x10, 0x10, 0x10 };
     uint8_t mask[] = { 0xf0, 0xf0, 0xf0, 0xf0 };
     
-    fsm = FSM_Create(&symbol, data, mask, sizeof(data));
+    sym = Symbol_GetSymbol(0);
+    sym->data = data;
+    sym->mask = mask;
+    sym->data_size = sizeof(data);
+    
+    fsm = FSM_Create(0);
     
     if (fsm) { 
         FSM_Free(fsm);
@@ -204,14 +250,24 @@ int FSMTest_Create4(void) {
 
 int FSMTest_Merge0(void) {
     fsm_t *fsm1, *fsm2, *fsm3 = NULL;
-    symbol_t symbol1, symbol2;
+    symbol_t *sym;
     uint8_t data1[] = { 0x00, 0x01, 0x02, 0x03 };
     uint8_t mask1[] = { 0xff, 0xff, 0xff, 0xff };
     uint8_t data2[] = { 0x05, 0x06, 0x07, 0x08 };
     uint8_t mask2[] = { 0xff, 0xff, 0xff, 0xff };
     
-    fsm1 = FSM_Create(&symbol1, data1, mask1, sizeof(data1));
-    fsm2 = FSM_Create(&symbol2, data2, mask2, sizeof(data2));
+    sym = Symbol_GetSymbol(0);
+    sym->data = data1;
+    sym->mask = mask1;
+    sym->data_size = sizeof(data1);
+    
+    sym = Symbol_GetSymbol(1);
+    sym->data = data2;
+    sym->mask = mask2;
+    sym->data_size = sizeof(data2);
+    
+    fsm1 = FSM_Create(0);
+    fsm2 = FSM_Create(1);
     
     if (fsm1 && fsm2) { 
         fsm3 = FSM_Merge(fsm1, fsm2);
@@ -231,14 +287,24 @@ int FSMTest_Merge0(void) {
 
 int FSMTest_Merge1(void) {
     fsm_t *fsm1, *fsm2, *fsm3 = NULL;
-    symbol_t symbol1, symbol2;
+    symbol_t *sym;
     uint8_t data1[] = { 0x00, 0x01, 0x00, 0x00 };
     uint8_t mask1[] = { 0x00, 0xff, 0xff, 0x00 };
     uint8_t data2[] = { 0x01, 0x00, 0x00, 0x00 };
     uint8_t mask2[] = { 0xff, 0x00, 0x00, 0xff };
     
-    fsm1 = FSM_Create(&symbol1, data1, mask1, sizeof(data1));
-    fsm2 = FSM_Create(&symbol2, data2, mask2, sizeof(data2));
+    sym = Symbol_GetSymbol(0);
+    sym->data = data1;
+    sym->mask = mask1;
+    sym->data_size = sizeof(data1);
+    
+    sym = Symbol_GetSymbol(1);
+    sym->data = data2;
+    sym->mask = mask2;
+    sym->data_size = sizeof(data2);
+    
+    fsm1 = FSM_Create(0);
+    fsm2 = FSM_Create(1);
     
     if (fsm1 && fsm2) { 
         fsm3 = FSM_Merge(fsm1, fsm2);
@@ -256,28 +322,32 @@ int FSMTest_Merge1(void) {
     return fsm3 == NULL;
 }
 
-void FSMTest_SymbolDetect(const symbol_t *symbol, const uint8_t *address) {
+void FSMTest_SymbolDetect(const symbol_index_t symbol, const uint8_t *address) {
     symbol_t *sym;
     const uint8_t **results;
     
-    sym = (symbol_t *)symbol;
+    sym = Symbol_GetSymbol(symbol);
     results = (const uint8_t **)sym->name;
     results[sym->size++] = address;
 }
 
 int FSMTest_Run0(void) {
     fsm_t *fsm;
-    symbol_t symbol;
+    symbol_t *sym;
     const uint8_t *results[1];
     uint8_t data[] = { 0x00, 0x01, 0x02, 0x03 };
     uint8_t mask[] = { 0xff, 0xff, 0xff, 0xff };
     uint8_t test[] = { 0x00, 0x01, 0x02, 0x03 };
     
-    symbol.offset = 4;
-    symbol.name = (const char *)results;
-    symbol.size = 0;
+    sym = Symbol_GetSymbol(0);
+    sym->data = data;
+    sym->mask = mask;
+    sym->data_size = sizeof(data);
+    sym->offset = 4;
+    sym->name = (const char *)results;
+    sym->size = 0;
     
-    fsm = FSM_Create(&symbol, data, mask, sizeof(data));
+    fsm = FSM_Create(0);
     
     if (fsm) {
         FSM_Run(fsm, test, sizeof(test), FSMTest_SymbolDetect);
@@ -285,7 +355,7 @@ int FSMTest_Run0(void) {
         FSM_Free(fsm);
     }
         
-    if (symbol.size != 1)
+    if (Symbol_GetSymbol(0)->size != 1)
         return 101;
     if (results[0] != &test[0])
         return 102;
@@ -295,17 +365,21 @@ int FSMTest_Run0(void) {
 
 int FSMTest_Run1(void) {
     fsm_t *fsm;
-    symbol_t symbol;
+    symbol_t *sym;
     const uint8_t *results[2];
     uint8_t data[] = { 0x00, 0x01, 0x02, 0x03 };
     uint8_t mask[] = { 0xff, 0xff, 0xff, 0xff };
     uint8_t test[] = { 0x00, 0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03 };
     
-    symbol.offset = 4;
-    symbol.name = (const char *)results;
-    symbol.size = 0;
+    sym = Symbol_GetSymbol(0);
+    sym->data = data;
+    sym->mask = mask;
+    sym->data_size = sizeof(data);
+    sym->offset = 4;
+    sym->name = (const char *)results;
+    sym->size = 0;
     
-    fsm = FSM_Create(&symbol, data, mask, sizeof(data));
+    fsm = FSM_Create(0);
     
     if (fsm) {
         FSM_Run(fsm, test, sizeof(test), FSMTest_SymbolDetect);
@@ -313,7 +387,7 @@ int FSMTest_Run1(void) {
         FSM_Free(fsm);
     }
         
-    if (symbol.size != 2)
+    if (Symbol_GetSymbol(0)->size != 2)
         return 101;
     if (results[0] != &test[1])
         return 102;
@@ -325,17 +399,21 @@ int FSMTest_Run1(void) {
 
 int FSMTest_Run2(void) {
     fsm_t *fsm;
-    symbol_t symbol;
+    symbol_t *sym;
     const uint8_t *results[2];
     uint8_t data[] = { 0x00, 0x01, 0x00, 0x01 };
     uint8_t mask[] = { 0xff, 0xff, 0xff, 0xff };
     uint8_t test[] = { 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x02, 0x03 };
     
-    symbol.offset = 4;
-    symbol.name = (const char *)results;
-    symbol.size = 0;
+    sym = Symbol_GetSymbol(0);
+    sym->data = data;
+    sym->mask = mask;
+    sym->data_size = sizeof(data);
+    sym->offset = 4;
+    sym->name = (const char *)results;
+    sym->size = 0;
     
-    fsm = FSM_Create(&symbol, data, mask, sizeof(data));
+    fsm = FSM_Create(0);
     
     if (fsm) {
         FSM_Run(fsm, test, sizeof(test), FSMTest_SymbolDetect);
@@ -343,7 +421,7 @@ int FSMTest_Run2(void) {
         FSM_Free(fsm);
     }
         
-    if (symbol.size != 2)
+    if (Symbol_GetSymbol(0)->size != 2)
         return 101;
     if (results[0] != &test[1])
         return 102;
@@ -355,17 +433,21 @@ int FSMTest_Run2(void) {
 
 int FSMTest_Run3(void) {
     fsm_t *fsm;
-    symbol_t symbol;
+    symbol_t *sym;
     const uint8_t *results[3];
     uint8_t data[] = { 0x00, 0x01, 0x00, 0x00 };
     uint8_t mask[] = { 0x00, 0xff, 0xff, 0x00 };
     uint8_t test[] = { 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x03 };
     
-    symbol.offset = 4;
-    symbol.name = (const char *)results;
-    symbol.size = 0;
+    sym = Symbol_GetSymbol(0);
+    sym->data = data;
+    sym->mask = mask;
+    sym->data_size = sizeof(data);
+    sym->offset = 4;
+    sym->name = (const char *)results;
+    sym->size = 0;
     
-    fsm = FSM_Create(&symbol, data, mask, sizeof(data));
+    fsm = FSM_Create(0);
     
     if (fsm) {
         FSM_Run(fsm, test, sizeof(test), FSMTest_SymbolDetect);
@@ -373,7 +455,7 @@ int FSMTest_Run3(void) {
         FSM_Free(fsm);
     }
         
-    if (symbol.size != 3)
+    if (Symbol_GetSymbol(0)->size != 3)
         return 101;
     if (results[0] != &test[1])
         return 102;
@@ -388,7 +470,7 @@ int FSMTest_Run3(void) {
 
 int FSMTest_Run4(void) {
     fsm_t *fsm1, *fsm2, *fsm3 = NULL;
-    symbol_t symbol1, symbol2;
+    symbol_t *sym;
     const uint8_t *results1[3];
     const uint8_t *results2[3];
     uint8_t data1[] = { 0x00, 0x01, 0x00, 0x00 };
@@ -397,15 +479,24 @@ int FSMTest_Run4(void) {
     uint8_t mask2[] = { 0xff, 0x00, 0x00, 0xff };
     uint8_t test[] = { 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x03 };
     
-    symbol1.offset = 4;
-    symbol1.name = (const char *)results1;
-    symbol1.size = 0;
-    symbol2.offset = 4;
-    symbol2.name = (const char *)results2;
-    symbol2.size = 0;
+    sym = Symbol_GetSymbol(0);
+    sym->data = data1;
+    sym->mask = mask1;
+    sym->data_size = sizeof(data1);
+    sym->offset = 4;
+    sym->name = (const char *)results1;
+    sym->size = 0;
     
-    fsm1 = FSM_Create(&symbol1, data1, mask1, sizeof(data1));
-    fsm2 = FSM_Create(&symbol2, data2, mask2, sizeof(data2));
+    sym = Symbol_GetSymbol(1);
+    sym->data = data2;
+    sym->mask = mask2;
+    sym->data_size = sizeof(data2);
+    sym->offset = 4;
+    sym->name = (const char *)results2;
+    sym->size = 0;
+    
+    fsm1 = FSM_Create(0);
+    fsm2 = FSM_Create(1);
     
     if (fsm1 && fsm2) { 
         fsm3 = FSM_Merge(fsm1, fsm2);
@@ -422,7 +513,7 @@ int FSMTest_Run4(void) {
     if (fsm2)
         FSM_Free(fsm2);
         
-    if (symbol1.size != 3)
+    if (Symbol_GetSymbol(0)->size != 3)
         return 101;
     if (results1[0] != &test[0])
         return 102;
@@ -430,7 +521,7 @@ int FSMTest_Run4(void) {
         return 103;
     if (results1[2] != &test[5])
         return 104;
-    if (symbol2.size != 2)
+    if (Symbol_GetSymbol(1)->size != 2)
         return 105;
     if (results2[0] != &test[0])
         return 106;

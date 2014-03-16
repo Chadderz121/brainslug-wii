@@ -108,6 +108,8 @@ typedef struct {
     const symbol_relocation_t *relocation;
 } symbol_t;
 
+#define SYMBOL_NULL ((symbol_index_t)0xffffffff)
+
 extern symbol_index_t symbol_count;
 
 symbol_t *Symbol_GetSymbol(symbol_index_t index);

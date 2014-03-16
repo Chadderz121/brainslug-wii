@@ -45,9 +45,9 @@ struct fsm_transition_t;
 
 typedef struct fsm_node_t {
     unsigned int index;
-    /* if symbol != NULL then transition must be. This means it's an epsilon
-     * node, so doesn't consum its input. */
-    const symbol_t *symbol;
+    /* if symbol != SYMBOL_NULL then transition must be. This means it's an
+     * epsilon node, so doesn't consum its input. */
+    symbol_index_t symbol;
     union {
         /* list of transitions given certain characters */
         struct fsm_node_t *transition[16];
@@ -77,16 +77,14 @@ static fsm_node_t *FSM_AllocNode(fsm_t *fsm) {
     
     if (node) {
         node->index = fsm->node_count;
-        node->symbol = NULL;
+        node->symbol = SYMBOL_NULL;
         fsm->node_count++;
     }
     
     return node;
 }
  
-fsm_t *FSM_Create(
-        const symbol_t *symbol, const uint8_t *data, 
-        const uint8_t *mask, size_t length) {
+fsm_t *FSM_Create(symbol_index_t symbol_index) {
     typedef struct {
         fsm_node_t *node;
         fsm_node_t *fallback;
@@ -104,21 +102,29 @@ fsm_t *FSM_Create(
      * queue structures maintain a set of pairs of nodes and fallback nodes
      * which are to be considered in the next step. */
 
+    const symbol_t *symbol;
+    const uint8_t *data, *mask;
     fsm_node_build_queue_t *queue1 = NULL, *queue1_end, *queue1_free;
     fsm_node_build_queue_t *queue2 = NULL, *queue2_end, *queue2_free;
     fsm_node_build_queue_t *current;
     fsm_t *fsm = NULL;
     fsm_node_t *node, *fallback;
-    size_t i;
+    size_t i, length;
     unsigned int j;
     
+    assert(symbol_index != SYMBOL_NULL);
+
+    symbol = Symbol_GetSymbol(symbol_index);
+    
     assert(symbol);
+
+    data = symbol->data;
+    mask = symbol->mask;
+    length = symbol->data_size;
+
     assert(data);
     assert(mask);
     assert(length > 0);
-    
-    if (length <= 0)
-        return NULL;
         
     queue1 = malloc(16 * sizeof(fsm_node_build_queue_t));
     queue2 = malloc(16 * sizeof(fsm_node_build_queue_t));
@@ -294,7 +300,7 @@ fsm_t *FSM_Create(
         assert(current->node);
         assert(current->fallback);
                 
-        current->node->symbol = symbol;
+        current->node->symbol = symbol_index;
         current->node->payload.next = fallback;
     }
     
@@ -365,9 +371,10 @@ static bool FSM_BuildMergeNodeEpsilon(
     assert(left_node);
     assert(right_node);
     
-    assert(left_node->symbol != NULL || right_node->symbol != NULL);
+    assert(left_node->symbol != SYMBOL_NULL ||
+        right_node->symbol != SYMBOL_NULL);
         
-    if (left_node->symbol != NULL) {
+    if (left_node->symbol != SYMBOL_NULL) {
         unsigned int common_index;
         
         node->symbol = left_node->symbol;
@@ -424,7 +431,7 @@ static bool FSM_BuildMergeNode(
     assert(left_node);
     assert(right_node);
     
-    if (left_node->symbol != NULL || right_node->symbol != NULL) {
+    if (left_node->symbol != SYMBOL_NULL || right_node->symbol != SYMBOL_NULL) {
         return FSM_BuildMergeNodeEpsilon(
             fsm, left, right, node_index, node, left_node, right_node);
     } else {
@@ -518,7 +525,7 @@ void FSM_Free(fsm_t *fsm) {
 #endif
             for (i = 0; i < fsm->node_count; i++) {
                 if (nodes[i] != NULL) {
-                    if (nodes[i]->symbol == NULL) {
+                    if (nodes[i]->symbol == SYMBOL_NULL) {
                         /* transitional node */                    
                         for (j = 0; j < 16; j++) {
                             fsm_node_t *node;
@@ -581,23 +588,27 @@ void FSM_Run(
         assert(state != NULL);
         
         /* process epsilons */
-        while (state->symbol != NULL) {
-            match_fn(state->symbol, data + i - state->symbol->offset);
+        while (state->symbol != SYMBOL_NULL) {
+            match_fn(
+                state->symbol,
+                data + i - Symbol_GetSymbol(state->symbol)->offset);
             state = state->payload.next;
             assert(state != NULL);
         }
         
-        assert(state->symbol == NULL);
+        assert(state->symbol == SYMBOL_NULL);
         
         /* process transition */
         state = state->payload.transition[data[i] >> 4];
-        assert(state->symbol == NULL);
+        assert(state->symbol == SYMBOL_NULL);
         state = state->payload.transition[data[i] & 0xf];
     }
     
     /* process epsilons */
-    while (state->symbol != NULL) {
-        match_fn(state->symbol, data + i - state->symbol->offset);
+    while (state->symbol != SYMBOL_NULL) {
+        match_fn(
+            state->symbol,
+            data + i - Symbol_GetSymbol(state->symbol)->offset);
         state = state->payload.next;
         assert(state != NULL);
     }
