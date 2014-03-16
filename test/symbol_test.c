@@ -21,6 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+ 
+#ifdef _WIN32
+#define FMT_SIZE "I"
+#endif
 
 #include "../src/linker/symbol.c"
  
@@ -40,5 +44,116 @@ int SymbolTest_Parse0(void) {
         return 6;
     if (!Symbol_ParseFile(file))
         return 101;
+    if (symbol_count != 0)
+        return 102;
+        
+    return 0;
+}
+int SymbolTest_Parse1(void) {
+    FILE *file;
+    symbol_t *symbol;
+
+    file = fopen("symbol_test_parse1.xml", "r");
+
+    if (!file)
+        return 6;
+    if (!Symbol_ParseFile(file))
+        return 101;
+    if (symbol_count != 1)
+        return 102;
+    
+    symbol = Symbol_GetSymbol(0);
+    
+    if (symbol->index != 0)
+        return 103;
+    if (symbol->name == NULL)
+        return 104;
+    if (strcmp(symbol->name, "IOS_Ioctl") != 0)
+        return 105;
+    if (symbol->size != 0)
+        return 106;
+    if (symbol->offset != 0)
+        return 107;
+    if (symbol->data != NULL)
+        return 108;
+    if (symbol->mask != NULL)
+        return 109;
+    if (symbol->data_size != 0)
+        return 110;
+    if (symbol->relocation != NULL)
+        return 111;
+        
+    return 0;
+}
+int SymbolTest_Parse2(void) {
+    FILE *file;
+    symbol_t *symbol;
+
+    file = fopen("symbol_test_parse2.xml", "r");
+
+    if (!file)
+        return 6;
+    if (!Symbol_ParseFile(file))
+        return 101;
+    if (symbol_count != 1)
+        return 102;
+
+    symbol = Symbol_GetSymbol(0);
+    
+    if (symbol->index != 0)
+        return 103;
+    if (symbol->name == NULL)
+        return 104;
+    if (strcmp(symbol->name, "IOS_Ioctl") != 0)
+        return 105;
+    if (symbol->size != 0x130)
+        return 106;
+    if (symbol->offset != 4)
+        return 107;
+    if (symbol->data_size != 8)
+        return 108;
+    if (symbol->data == NULL)
+        return 109;
+    if (memcmp("ABCDEFGH", symbol->data, 8) != 0) {
+        printf("%x\n", (unsigned int)*symbol->data);
+        return 110;
+    }
+    if (symbol->mask == NULL)
+        return 111;
+    if (memcmp("\xff\xff\x00\x00\xff\xff\xff\xff", symbol->mask, 8) != 0)
+        return 112;
+    if (symbol->relocation == NULL)
+        return 113;
+    if (symbol->relocation->symbol == NULL)
+        return 114;
+    if (strcmp(symbol->relocation->symbol, "r3") != 0)
+        return 115;
+    if (symbol->relocation->type != R_PPC_EMB_SDA21)
+        return 116;
+    if (symbol->relocation->offset != 0)
+        return 117;
+    if (symbol->relocation->next == NULL)
+        return 117;
+    if (symbol->relocation->next->symbol == NULL)
+        return 118;
+    if (strcmp(symbol->relocation->next->symbol, "r2") != 0)
+        return 119;
+    if (symbol->relocation->next->type != R_PPC_ADDR16_LO)
+        return 120;
+    if (symbol->relocation->next->offset != 0x12c)
+        return 121;
+    if (symbol->relocation->next->next == NULL)
+        return 122;
+    if (symbol->relocation->next->next->symbol == NULL)
+        return 123;
+    if (strcmp(symbol->relocation->next->next->symbol, "r1") != 0)
+        return 124;
+    if (symbol->relocation->next->next->type != R_PPC_ADDR16_HI)
+        return 125;
+    if (symbol->relocation->next->next->offset != 4)
+        return 126;
+    if (symbol->relocation->next->next->next != NULL)
+        return 127;
+        
     return 0;
 }

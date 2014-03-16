@@ -26,5 +26,7 @@
 #define SYMBOL_TEST_H_
 
 int SymbolTest_Parse0(void);
+int SymbolTest_Parse1(void);
+int SymbolTest_Parse2(void);
 
 #endif /* SYMBOL_TEST_H_*/
