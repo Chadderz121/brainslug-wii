@@ -49,7 +49,7 @@ const struct {
 };
 
 #ifndef FMT_SIZE
-#define FMT_SIZE "l"
+#define FMT_SIZE "z"
 #endif
 
 #define SYMBOL_RELOCATION_STRINGS_COUNT \
@@ -110,15 +110,15 @@ bool Symbol_ParseFile(FILE *file) {
             goto exit_error;
 
         if (size_str != NULL) {
-            if (sscanf(size_str, "%" FMT_SIZE "u", &symbol->size) != 1 && 
-                sscanf(size_str, "%" FMT_SIZE "x", &symbol->size) != 1)
-                
+            if (sscanf(size_str, "%" FMT_SIZE "x", &symbol->size) != 1 && 
+                sscanf(size_str, "%" FMT_SIZE "u", &symbol->size) != 1)
+
                 goto next_symbol;
         } else
             symbol->size = 0;
         if (offset_str != NULL) {
-            if (sscanf(offset_str, "%" FMT_SIZE "d", &symbol->offset) != 1 &&
-                sscanf(offset_str, "%" FMT_SIZE "x", &symbol->offset) != 1)
+            if (sscanf(offset_str, "%" FMT_SIZE "x", &symbol->offset) != 1 &&
+                sscanf(offset_str, "%" FMT_SIZE "d", &symbol->offset) != 1)
                 
                 goto next_symbol;
         } else
@@ -253,8 +253,8 @@ bool Symbol_ParseFile(FILE *file) {
 
             if (i == SYMBOL_RELOCATION_STRINGS_COUNT)
                 goto next_reloc;
-            if (sscanf(offset_str, "%" FMT_SIZE "u", &offset) != 1 &&
-                sscanf(offset_str, "%" FMT_SIZE "x", &offset) != 1)
+            if (sscanf(offset_str, "%" FMT_SIZE "x", &offset) != 1 &&
+                sscanf(offset_str, "%" FMT_SIZE "u", &offset) != 1)
                 
                 goto next_reloc;
             if (offset + 4 > symbol->size)

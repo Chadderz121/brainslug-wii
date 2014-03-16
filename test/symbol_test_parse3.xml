@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- First parsing test. An empty file -->
+<symbols>
+    <symbol name="IOS_Ioctlv" size="0x130" offset="4" >
+        <data>
+            41 4243 44
+            45464748
+        </data>
+        <reloc type="hi" offset="4" symbol="r1" />
+        <reloc type="lo" offset="0x12c" symbol="r2" />
+        <reloc type="sda21" offset="0" symbol="r3" />
+    </symbol>
+    <symbol name="IOS_Ioctl" size="0x130" offset="4" >
+        <data>
+            41????44
+            4546475?
+        </data>
+        <reloc type="hi" offset="4" symbol="r1" />
+        <reloc type="lo" offset="0x12c" symbol="r2" />
+        <reloc type="sda21" offset="0" symbol="r3" />
+    </symbol>
+</symbols>
