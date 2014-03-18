@@ -61,7 +61,7 @@ LDFLAGS  += -O2 -Wl$C--gc-sections \
 CFLAGS   += -O2 -Wall -x c -std=gnu99 \
             -DGEKKO -DHW_RVL -D__wii__ \
             -mrvl -mcpu=750 -meabi -mhard-float \
-            -msdata=eabi -memb
+            -msdata=eabi -memb -ffunction-sections -fdata-sections
 
 ifdef DEBUG
 else

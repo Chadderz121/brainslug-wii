@@ -27,11 +27,15 @@
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <gelf.h>
+#include <libelf.h>
 #include <ogc/lwp.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "apploader/apploader.h"
 #include "library/dolphin_os.h"
@@ -50,6 +54,7 @@ static void Module_ListLoad(void);
 static void Module_CheckDirectory(char *path);
 static void Module_CheckFile(const char *path);
 static void Module_Load(const char *path);
+static void Module_LoadElf(Elf *elf);
 
 bool Module_Init(void) {
     return Event_Init(&module_list_loaded);
@@ -123,6 +128,10 @@ static void Module_CheckDirectory(char *path) {
                     break;
                 }
                 case DT_DIR: { /* directory */
+                    if (strcmp(entry->d_name, ".") == 0 ||
+                        strcmp(entry->d_name, "..") == 0)
+                        break;
+                        
                     Event_Wait(&apploader_event_disk_id);
                     
                     /* load directories with a prefix match on the game name:
@@ -170,14 +179,68 @@ static void Module_CheckFile(const char *path) {
         
     assert(extension != NULL);
     
-    if (strcmp(extension, "elf") == 0 ||
+    if (strcmp(extension, "mod") == 0 ||
         strcmp(extension, "o") == 0 ||
-        strcmp(extension, "mod") == 0) {
+        strcmp(extension, "a") == 0 ||
+        strcmp(extension, "elf") == 0) {
         
         Module_Load(path);
     }
 }
 
 static void Module_Load(const char *path) {
+    int fd = -1;
+    Elf *elf = NULL;
+    
+    /* check for compile errors */
+    assert(elf_version(EV_CURRENT) != EV_NONE);
+    
+    fd = open(path, O_RDONLY, 0);
+    
+    if (fd == -1)
+        goto exit_error;
+        
+    elf = elf_begin(fd, ELF_C_READ, NULL);
+    
+    if (elf == NULL)
+        goto exit_error;
+        
+    switch (elf_kind(elf)) {
+        case ELF_K_AR:
+            /* TODO */
+            break;
+        case ELF_K_ELF:
+            Module_LoadElf(elf);
+            break;
+        default:
+            goto exit_error;
+    }
 
+exit_error:
+    if (elf != NULL)
+        elf_end(elf);
+    if (fd != -1)
+        close(fd);
+}
+
+static void Module_LoadElf(Elf *elf) {
+    Elf_Scn *scn;
+    Elf_Data *data;
+    size_t shstrndx;
+    
+    assert(elf != NULL);
+    assert(elf_kind(elf) == ELF_K_ELF);
+    
+    if (elf_getshdrstrndx(elf, &shstrndx) != 0)
+        return;
+        
+    for (scn = elf_nextscn(elf, NULL);
+         scn != NULL;
+         scn = elf_nextscn(elf, scn)) {
+         
+        GElf_Shdr shdr;
+         
+        if (gelf_getshdr(scn, &shdr) != &shdr)
+            continue;
+    }
 }
