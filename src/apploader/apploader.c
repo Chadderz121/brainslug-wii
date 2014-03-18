@@ -29,13 +29,14 @@
 #include <ogc/lwp.h>
 #include <ogc/lwp_watchdog.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "di/di.h"
 #include "library/dolphin_os.h"
 #include "library/event.h"
-#include "linker/module.h"
+#include "modules/module.h"
 #include "threads.h"
 
 typedef struct {
@@ -45,7 +46,7 @@ typedef struct {
 
 typedef struct {
     uint32_t offset;
-    uint32_t length;
+    uint32_t type;
 } partition_info_t;
 
 // types for the four methods called on the game's apploader
@@ -58,41 +59,48 @@ typedef void (*apploader_entry_t)(
     apploader_main_t *main,
     apploader_final_t *final);
 
-static void *aploader_main(void *arg);
-
 event_t apploader_event_disk_id;
 event_t apploader_event_complete;
-apploader_game_entry_t apploader_game_entry_fn;
+apploader_game_entry_t apploader_game_entry_fn = NULL;
 
-static char apploader_ipc_tmd[18944] ATTRIBUTE_ALIGN(32);
+static u32 apploader_ipc_tmd[0x4A00 / 4] ATTRIBUTE_ALIGN(32);
 
-int apploader_run_background(void) {
+static void *Aploader_Main(void *arg);
+
+bool Apploader_Init(void) {
+    return 
+        Event_Init(&apploader_event_disk_id) &&
+        Event_Init(&apploader_event_complete);
+}
+
+bool Apploader_RunBackground(void) {
     int ret;
     lwp_t thread;
     
-    Event_Init(&apploader_event_disk_id);
-    
     ret = LWP_CreateThread(
-        &thread, &aploader_main,
+        &thread, &Aploader_Main,
         NULL, NULL, 0, THREAD_PRIO_IO);
         
     if (ret) {
         errno = ENOMEM;
-        return -1;
+        return false;
     }
     
-    return 0;
+    return true;
 }
 
-void apploader_report(const char *format, ...) {
+void Apploader_Report(const char *format, ...) {
+#if 0
+    /* debugging code, uncomment to display apploader logging messages */
     va_list args;
 
     va_start(args, format);
-    vprintf(format, args);
+    vprintf(message, sizeof(message), format, args);
     va_end(args);
+#endif
 }
     
-static void *aploader_main(void *arg) {
+static void *Aploader_Main(void *arg) {
     int ret, i;
     contents_t ipc_toc[4] ATTRIBUTE_ALIGN(32);
     partition_info_t ipc_partition_info[4] ATTRIBUTE_ALIGN(32);
@@ -126,6 +134,7 @@ static void *aploader_main(void *arg) {
     do {
         ret = DI_ReadUnencrypted(ipc_toc, sizeof(ipc_toc), 0x00010000);
     } while (ret < 0);
+    DCInvalidateRange(ipc_toc, sizeof(ipc_toc));
     do {
         ret = DI_ReadUnencrypted(
             ipc_partition_info, sizeof(ipc_partition_info),
@@ -134,7 +143,7 @@ static void *aploader_main(void *arg) {
     
     boot_partition = NULL;
     for (i = 0; i < ipc_toc->boot_info_count; i++) {
-        if (ipc_partition_info[i].length == 0) {
+        if (ipc_partition_info[i].type == 0) {
             boot_partition = &ipc_partition_info[i];
         }
     }
@@ -144,12 +153,19 @@ static void *aploader_main(void *arg) {
             boot_partition->offset, (void *)apploader_ipc_tmd);
     } while (ret < 0);
     
+#if 0
+    /* debugging code */
     dvd_tmd = SIGNATURE_PAYLOAD(apploader_ipc_tmd);
+    
+    printf(
+        "Title ID: %08x-%.4s\nIOS: %08x-IOS%d\n",
+        (int)(dvd_tmd->title_id >> 32), (char *)&dvd_tmd->title_id + 4,
+        (int)(dvd_tmd->sys_version >> 32), (int)dvd_tmd->sys_version);
+#endif
     
     do {
         ret = DI_Read(ipc_buffer, sizeof(ipc_buffer), 0x2440 / 4);
     } while (ret < 0);
-    DCFlushRange(ipc_buffer, sizeof(ipc_buffer));
     
     do {
         ret = DI_Read(
@@ -158,8 +174,8 @@ static void *aploader_main(void *arg) {
     
     fn_entry = (apploader_entry_t)ipc_buffer[4];
     
-    fn_entry(&fn_init, &fn_main, &fn_final);
-    fn_init(&apploader_report);
+    fn_entry(&fn_init, &fn_main, &fn_final);   
+    fn_init(&Apploader_Report);
     
     settime(secs_to_ticks(time(NULL) - 946684800));
 
@@ -182,7 +198,7 @@ static void *aploader_main(void *arg) {
         
         DCFlushRange(destination, length);
     }
-    
+        
     switch (os0->disc.gamename[3]) {
         case 'E':
         case 'J':

@@ -24,34 +24,49 @@
 
 #include "main.h"
 
+#include <fat.h>
 #include <malloc.h>
 #include <ogc/consol.h>
 #include <ogc/lwp.h>
 #include <ogc/system.h>
 #include <ogc/video.h>
+#include <sdcard/wiisd_io.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "apploader/apploader.h"
 #include "library/dolphin_os.h"
 #include "library/event.h"
+#include "modules/module.h"
 #include "threads.h"
+
+event_t main_event_fat_loaded;
 
 int main(void) {
     int ret;
-    void *frame_buffer;
+    void *frame_buffer = NULL;
     GXRModeObj *rmode = NULL;
     
     /* The game's boot loader is statically loaded at 0x81200000, so we'd better
      * not start mallocing there! */
-    SYS_SetArena1Hi((void*)0x81200000);
+    SYS_SetArena1Hi((void *)0x81200000);
+
+    /* initialise all subsystems */
+    if (!Event_Init(&main_event_fat_loaded))
+        goto exit_error;
+    if (!Apploader_Init())
+        goto exit_error;
+    if (!Module_Init())
+        goto exit_error;
     
     /* main thread is UI, so set thread prior to UI */
     LWP_SetThreadPriority(LWP_GetSelf(), THREAD_PRIO_UI);
 
     /* spawn lots of worker threads to do stuff */
-    ret = apploader_run_background();
-    if (ret)
-        return -1;
+    if (!Apploader_RunBackground())
+        goto exit_error;
+    if (!Module_RunBackground())
+        goto exit_error;
 
     /* configure the video */
     VIDEO_Init();
@@ -60,7 +75,7 @@ int main(void) {
     
     frame_buffer = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
     if (!frame_buffer)
-        return -1;
+        goto exit_error;
     console_init(
         frame_buffer, 20, 20, rmode->fbWidth, rmode->xfbHeight,
         rmode->fbWidth * VI_DISPLAY_PIX_SZ);
@@ -75,7 +90,7 @@ int main(void) {
 
     /* display the welcome message */
     printf("\x1b[2;0H");
-    printf("BrainSlug Wii  v%u.%u.%u"
+    printf("BrainSlug Wii  v%x.%02x.%04x"
 #ifndef NDEBUG
         " DEBUG build"
 #endif
@@ -84,30 +99,59 @@ int main(void) {
         BSLUG_VERSION_MINOR(BSLUG_LOADER_VERSION),
         BSLUG_VERSION_REVISION(BSLUG_LOADER_VERSION));
     printf(" by Chadderz\n\n");
+   
+    if (!__io_wiisd.startup() || !__io_wiisd.isInserted()) {
+        printf("Please insert an SD card.\n\n");
+        do {
+            __io_wiisd.shutdown();
+        } while (!__io_wiisd.startup() || !__io_wiisd.isInserted());
+    }
+    __io_wiisd.shutdown();
+    
+    if (!fatMountSimple("sd", &__io_wiisd)) {
+        fprintf(stderr, "Could not mount SD card.\n");
+        goto exit_error;
+    }
+    
+    Event_Trigger(&main_event_fat_loaded);
+        
+    printf("Waiting for game disk... ");
+    Event_Wait(&apploader_event_disk_id);
+    printf("%.4s", os0->disc.gamename);
+    printf("\n");
+    
+    Event_Wait(&apploader_event_complete);
+
+    if (apploader_game_entry_fn == NULL) {
+        fprintf(stderr, "Error... entry point is NULL.\n");
+    } else {
+        printf("\nPress RESET to launch game.\n");
+        while (!SYS_ResetButtonDown())
+            VIDEO_WaitVSync();
+        while (SYS_ResetButtonDown())
+            VIDEO_WaitVSync();
+            
+        SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);
+        apploader_game_entry_fn();
+    }
+
+    ret = 0;
+    goto exit;
+exit_error:
+    ret = -1;
+exit:
+    while (!SYS_ResetButtonDown())
+        VIDEO_WaitVSync();
+    while (SYS_ResetButtonDown())
+        VIDEO_WaitVSync();
     
     VIDEO_SetBlack(true);
     VIDEO_Flush();
     VIDEO_WaitVSync();
     
-    
-    printf("Waiting for game disk... ");
-    Event_Wait(&apploader_event_disk_id);
-    printf(
-        "%c%c%c%c\n",
-        os0->disc.gamename[0], os0->disc.gamename[1],
-        os0->disc.gamename[2], os0->disc.gamename[3]);
-    
-    
     free(frame_buffer);
-
-    Event_Wait(&apploader_event_complete);
-
-    if (apploader_game_entry_fn == NULL) {
-        printf("Error... entry point is NULL.\n");
-    } else {
-        SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);
-        apploader_game_entry_fn();
-    }
-    
-    return 0;
+        
+    exit(ret);
+        
+    return ret;
 }

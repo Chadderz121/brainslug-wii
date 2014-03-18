@@ -113,5 +113,6 @@ typedef struct {
 extern symbol_index_t symbol_count;
 
 symbol_t *Symbol_GetSymbol(symbol_index_t index);
+symbol_index_t Symbol_SearchSymbol(const char *name);
 
 #endif /* SYMBOL_H_ */

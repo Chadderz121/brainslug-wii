@@ -41,19 +41,19 @@ typedef struct {
     sem_t sem;
 } event_t;
 
-static int Event_Init(event_t *event);
-static int Event_Destroy(event_t *event);
-static int Event_Wait(event_t *event);
-static int Event_Trigger(event_t *event);
-static int Event_Reset(event_t *event);
+static bool Event_Init(event_t *event);
+static bool Event_Destroy(event_t *event);
+static bool Event_Wait(event_t *event);
+static bool Event_Trigger(event_t *event);
+static bool Event_Reset(event_t *event);
 
-static inline int Event_Init(event_t *event) {
+static inline bool Event_Init(event_t *event) {
     assert(event);
     event->triggered = false;
-    return LWP_SemInit(&event->sem, 0, 1);
+    return LWP_SemInit(&event->sem, 0, 1) == 0;
 }
 
-static inline int Event_Destroy(event_t *event) {
+static inline bool Event_Destroy(event_t *event) {
     int ret;
     
     assert(event);
@@ -62,35 +62,36 @@ static inline int Event_Destroy(event_t *event) {
 #ifndef NDEBUG
     event->sem = LWP_SEM_NULL;
 #endif
-    return ret;
+    return ret == 0;
 }
 
-static inline int Event_Wait(event_t *event) {
+static inline bool Event_Wait(event_t *event) {
     int ret;
     
     assert(event);
     assert(event->sem != LWP_SEM_NULL);
     if (event->triggered) {
-        return 0;
+        return true;
     } else {
         ret = LWP_SemWait(event->sem);
-        if (ret) return ret;
-        return LWP_SemPost(event->sem);
+        if (ret)
+            return false;
+        return LWP_SemPost(event->sem) == 0;
     }
 }
 
-static inline int Event_Trigger(event_t *event) {
+static inline bool Event_Trigger(event_t *event) {
     assert(event);
     assert(event->sem != LWP_SEM_NULL);
     event->triggered = true;
-    return LWP_SemPost(event->sem);
+    return LWP_SemPost(event->sem) == 0;
 }
 
-static inline int Event_Reset(event_t *event) {
+static inline bool Event_Reset(event_t *event) {
     assert(event);
     assert(event->sem != LWP_SEM_NULL);
     event->triggered = false;
-    return LWP_SemWait(event->sem);
+    return LWP_SemWait(event->sem) == 0;
 }
 
 #endif /* EVENT_H_ */

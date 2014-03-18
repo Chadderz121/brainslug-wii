@@ -90,7 +90,7 @@ MAP    ?= $(BIN)/boot.map
 # Variable init
 
 # The names of libraries to use.
-LIBS     := ogc wiiuse bte m mxml
+LIBS     := ogc mxml fat
 # The source files to compile.
 SRC      :=
 # Phony targets
@@ -101,7 +101,7 @@ INC_DIRS := include
 LIB_DIRS := $(DEVKITPPC) $(DEVKITPPC)/powerpc-eabi \
             $(DEVKITPRO)/libogc $(DEVKITPRO)/libogc/lib/wii \
             $(wildcard $(DEVKITPPC)/lib/gcc/powerpc-eabi/*) \
-            $(PORTLIBS)
+            $(PORTLIBS) $(PORTLIBS)/wii
 
 ###############################################################################
 # Rule to make everything.

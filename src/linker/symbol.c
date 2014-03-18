@@ -32,7 +32,13 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+typedef struct {
+    const char *name;
+    symbol_index_t index;
+} symbol_alphabetical_index_t;
 
 const struct {
     relocation_t relocation;
@@ -57,16 +63,18 @@ const struct {
     
 #define SYMBOL_LIST_INITIAL_CAPACITY 128
 
-static symbol_t *Symbol_AllocSymbol(const char *name, size_t name_length);
-static symbol_relocation_t *Symbol_AddRelocation(
-    symbol_t *symbol, const char *target,
-    relocation_t type, size_t offset);
-
 symbol_index_t symbol_count = 0;
 
 static symbol_t *symbol_globals = NULL;
 static symbol_t *symbol_globals_end = NULL;
 static symbol_t *symbol_globals_free = NULL;
+
+static symbol_alphabetical_index_t *symbol_alphabetical_index = NULL;
+
+static symbol_t *Symbol_AllocSymbol(const char *name, size_t name_length);
+static symbol_relocation_t *Symbol_AddRelocation(
+    symbol_t *symbol, const char *target,
+    relocation_t type, size_t offset);
 
 symbol_t *Symbol_GetSymbol(symbol_index_t index) {
     assert(symbol_globals != NULL);
@@ -324,6 +332,10 @@ static symbol_t *Symbol_AllocSymbol(const char *name, size_t name_length) {
     name_alloc = malloc(name_length + 1);
 
     if (name_alloc != NULL) {
+        if (symbol_alphabetical_index != NULL) {
+            free(symbol_alphabetical_index);
+            symbol_alphabetical_index = NULL;
+        }
         symbol_globals_free++;
         symbol_count++;
         strncpy(name_alloc, name, name_length + 1);
@@ -362,4 +374,72 @@ static symbol_relocation_t *Symbol_AddRelocation(
     }
     
     return relocation;
+}
+
+static int Symbol_Compare(const void *left_ptr, const void *right_ptr) {
+    const symbol_alphabetical_index_t *left, *right;
+    
+    left = (const symbol_alphabetical_index_t *)left_ptr;
+    right = (const symbol_alphabetical_index_t *)right_ptr;
+    
+    if (left->name == NULL && right->name == NULL)
+        return 0;
+    else if (left->name == NULL)
+        return -1;
+    else if (right->name == NULL)
+        return 1;
+    else
+        return strcmp(left->name, right->name);
+}
+
+symbol_index_t Symbol_SearchSymbol(const char *name) {
+    symbol_alphabetical_index_t ref, *index_ptr;
+    
+    assert(name != NULL);
+    
+    if (symbol_count == 0)
+        return SYMBOL_NULL;
+    
+    if (symbol_alphabetical_index == NULL) {
+        symbol_index_t i;
+        
+        symbol_alphabetical_index =
+            malloc(sizeof(symbol_alphabetical_index_t) * symbol_count);
+        
+        /* I suppose we could do a linear search here... */
+        if (symbol_alphabetical_index == NULL)
+            return SYMBOL_NULL;
+            
+        for (i = 0; i < symbol_count; i++) {
+            symbol_alphabetical_index[i].name = Symbol_GetSymbol(i)->name;
+            symbol_alphabetical_index[i].index = i;
+        }
+            
+        qsort(
+            symbol_alphabetical_index, symbol_count,
+            sizeof(symbol_alphabetical_index_t), &Symbol_Compare);
+    }
+    
+    assert(symbol_alphabetical_index != NULL);
+    
+    ref.name = name;
+    
+    index_ptr = bsearch(
+        &ref, symbol_alphabetical_index, symbol_count,
+        sizeof(symbol_alphabetical_index_t), &Symbol_Compare);
+    
+    if (index_ptr == NULL)
+        return SYMBOL_NULL;
+    else {
+        symbol_index_t index;
+        
+        assert(strcmp(index_ptr->name, name) == 0);
+        index = index_ptr->index;
+        
+        while (index > 0 &&
+               strcmp(Symbol_GetSymbol(index - 1)->name, name) == 0)
+            index--;
+            
+        return index;
+    }
 }

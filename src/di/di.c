@@ -34,13 +34,13 @@
 
 #define DI_IOCTL_IDENTIFY           0x12
 #define DI_IOCTL_READ_DISCID        0x70
+#define	DI_IOCTL_READ               0x71
 #define DI_IOCTL_WAITFORCOVERCLOSE  0x79
 #define DI_IOCTL_GETCOVER           0x88
 #define DI_IOCTL_RESET              0x8A
 #define	DI_IOCTLV_OPEN_PARTITION    0x8B
 #define	DI_IOCTL_CLOSE_PARTITION    0x8C
 #define DI_IOCTL_READ_UNENCRYPTED   0x8D
-#define	DI_IOCTL_READ               0xD0
 #define	DI_IOCTL_SET_MOTOR          0xE3
 
 static char di_ipc_path[] ATTRIBUTE_ALIGN(32) = "/dev/di";
@@ -112,7 +112,7 @@ int DI_Read(void *buffer, uint32_t length, uint32_t offset) {
     assert(di_fd != -1);
     assert(buffer);
     assert(di_has_partition);
-    assert((buffer & 0x1f) == 0);
+    assert(((int)buffer & 0x1f) == 0);
 
     di_ipc_in[0] = DI_IOCTL_READ << 24;
     di_ipc_in[1] = length;
@@ -154,9 +154,9 @@ int DI_DiscInserted(void) {
     
     assert(di_fd != -1);
 
-    di_ipc_in[0] = DI_IOCTL_GETCOVER;
+    di_ipc_in[0] = DI_IOCTL_GETCOVER << 24;
     ret = IOS_Ioctl(
-        di_fd, DI_IOCTL_GETCOVER << 24,
+        di_fd, DI_IOCTL_GETCOVER,
         di_ipc_in, sizeof(di_ipc_in),
         di_ipc_out, sizeof(di_ipc_out));
     
@@ -301,7 +301,7 @@ int DI_ReadUnencrypted(void *buffer, uint32_t length, uint32_t offset) {
     
     assert(di_fd != -1);
     assert(buffer);
-    assert((buffer & 0x1f) == 0);
+    assert(((int)buffer & 0x1f) == 0);
 
     di_ipc_in[0] = DI_IOCTL_READ_UNENCRYPTED << 24;
     di_ipc_in[1] = length;

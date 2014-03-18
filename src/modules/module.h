@@ -1,4 +1,4 @@
-/* module.c
+/* module.h
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -22,11 +22,18 @@
  * SOFTWARE.
  */
 
-#include "module.h"
+#ifndef MODULE_H_
+#define MODULE_H_
 
+#include <stdbool.h>
 #include <stddef.h>
 
 #include "library/event.h"
 
-event_t module_list_loaded;
-size_t module_list_size;
+extern event_t module_list_loaded;
+extern size_t module_list_size;
+
+bool Module_Init(void);
+bool Module_RunBackground(void);
+
+#endif /* MODULE_H_ */
