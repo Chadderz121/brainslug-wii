@@ -10,13 +10,13 @@
 
 #define BSLUG_SECTION(x) __attribute__((__section__ (".bslug." x)))
 
-enum bslug_loader_entry_type_t {
+typedef enum bslug_loader_entry_type_t {
     BSLUG_LOADER_ENTRY_FUNCTION,
     BSLUG_LOADER_ENTRY_LOAD
-};
+} bslug_loader_entry_type_t;
 
-struct bslug_loader_entry_t {
-    enum bslug_loader_entry_type_t type;
+typedef struct bslug_loader_entry_t {
+    bslug_loader_entry_type_t type;
     union {
         struct {
             const char *name;
@@ -28,12 +28,12 @@ struct bslug_loader_entry_t {
             size_t size;
         } load;
     } data;
-};
+} bslug_loader_entry_t;
 
 #define BSLUG_REPLACE(original_func, replace_func) \
-    extern const struct bslug_loader_entry_t bslug_load_ ## original_func \
+    extern const bslug_loader_entry_t bslug_load_ ## original_func \
         BSLUG_SECTION("load"); \
-    const struct bslug_loader_entry_t bslug_load_ ## original_func = { \
+    const bslug_loader_entry_t bslug_load_ ## original_func = { \
         .type = BSLUG_LOADER_ENTRY_FUNCTION, \
         .data = { \
             .function = { \
@@ -44,10 +44,10 @@ struct bslug_loader_entry_t {
     }
 
 #define BSLUG_LOAD(load_address, data_symb, data_size) \
-    extern const struct bslug_loader_entry_t bslug_load_ ## data_symb \
+    extern const bslug_loader_entry_t bslug_load_ ## data_symb \
         BSLUG_SECTION("load"); \
     extern typeof(data_symb) data_symb BSLUG_SECTION("data." #data_symb); \
-    const struct bslug_loader_entry_t bslug_load_ ## data_symb = { \
+    const bslug_loader_entry_t bslug_load_ ## data_symb = { \
         .type = BSLUG_LOADER_ENTRY_LOAD, \
         .data = { \
             .load = { \

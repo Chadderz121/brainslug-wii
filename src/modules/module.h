@@ -30,8 +30,20 @@
 
 #include "library/event.h"
 
+typedef struct {
+    const char *path;
+    const char *game;
+    const char *name;
+    const char *author;
+    const char *version;
+    const char *license;
+    size_t size;
+} module_metadata_t;
+
 extern event_t module_list_loaded;
 extern size_t module_list_size;
+extern module_metadata_t **module_list;
+extern size_t module_list_count;
 
 bool Module_Init(void);
 bool Module_RunBackground(void);

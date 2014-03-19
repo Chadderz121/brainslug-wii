@@ -25,6 +25,7 @@
 #include "module.h"
 
 #include <assert.h>
+#include <bslug/bslug.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -43,9 +44,14 @@
 #include "main.h"
 #include "threads.h"
 
+#define MODULE_LIST_CAPACITY_DEFAULT 16
+
 event_t module_fat_loaded;
 event_t module_list_loaded;
 size_t module_list_size = 0;
+module_metadata_t **module_list = NULL;
+size_t module_list_count = 0;
+static size_t module_list_capacity = 0;
 
 static const char module_path[] = "sd:/bslug/modules";
 
@@ -54,12 +60,13 @@ static void Module_ListLoad(void);
 static void Module_CheckDirectory(char *path);
 static void Module_CheckFile(const char *path);
 static void Module_Load(const char *path);
-static void Module_LoadElf(Elf *elf);
+static void Module_LoadElf(const char *path, Elf *elf);
+static module_metadata_t *Module_MetadataRead(
+    const char *path, Elf *elf, Elf32_Sym *symtab, size_t symtab_count);
 static bool Module_ElfLoadSection(
-    const Elf *elf, Elf_Scn *scn, const Elf32_Shdr *shdr,
-    void *destination);
+    const Elf *elf, Elf_Scn *scn, const Elf32_Shdr *shdr, void *destination);
 static void Module_ElfLoadSymbols(
-    size_t shndx, const const void *destination,
+    size_t shndx, const const void *destination, 
     Elf32_Sym *symtab, size_t symtab_count);
 static bool Module_ElfLink(
     Elf *elf, size_t shndx, void *destination, size_t offset, size_t size,
@@ -222,7 +229,7 @@ static void Module_Load(const char *path) {
             /* TODO */
             break;
         case ELF_K_ELF:
-            Module_LoadElf(elf);
+            Module_LoadElf(path, elf);
             break;
         default:
             goto exit_error;
@@ -235,13 +242,13 @@ exit_error:
         close(fd);
 }
 
-static void Module_LoadElf(Elf *elf) {
+static void Module_LoadElf(const char *path, Elf *elf) {
     Elf_Scn *scn;
     Elf32_Ehdr *ehdr;
     char *ident;
-    size_t shstrndx, sz, symtab_count, symstrndx;
-    char *meta_data = NULL;
+    size_t shstrndx, sz, symtab_count, symstrndx, i;
     Elf32_Sym *symtab = NULL;
+    module_metadata_t *metadata = NULL;
     
     assert(elf != NULL);
     assert(elf_kind(elf) == ELF_K_ELF);
@@ -268,9 +275,6 @@ static void Module_LoadElf(Elf *elf) {
     if (ehdr->e_machine != EM_PPC)
         goto exit_error;
     if (ehdr->e_version != EV_CURRENT)
-        goto exit_error;
-    
-    if (elf_getshdrstrndx(elf, &shstrndx) != 0)
         goto exit_error;
         
     for (scn = elf_nextscn(elf, NULL);
@@ -306,6 +310,119 @@ static void Module_LoadElf(Elf *elf) {
     
     if (symtab == NULL)
         goto exit_error;
+        
+    metadata = Module_MetadataRead(path, elf, symtab, symtab_count);
+    
+    if (metadata == NULL)
+        goto exit_error;
+    
+    if (elf_getshdrstrndx(elf, &shstrndx) != 0)
+        goto exit_error;
+    
+    for (i = 0; metadata->game[i] != '\0'; i++) {
+        if (metadata->game[i] != '?') {
+            Event_Wait(&apploader_event_disk_id);
+            if ((i < 4 && metadata->game[i] != os0->disc.gamename[i]) ||
+                (i >= 4 && i < 6 &&
+                 metadata->game[i] != os0->disc.company[i - 4]) ||
+                i >= 6)
+                goto exit_error;
+        }
+    }
+    
+    for (scn = elf_nextscn(elf, NULL);
+         scn != NULL;
+         scn = elf_nextscn(elf, scn)) {
+         
+        Elf32_Shdr *shdr;
+        
+        shdr = elf32_getshdr(scn);
+        if (shdr == NULL)
+            continue;
+            
+        if ((shdr->sh_type == SHT_PROGBITS || shdr->sh_type == SHT_NOBITS) && 
+            (shdr->sh_flags & SHF_ALLOC)) {
+            
+            const char *name;
+                
+            name = elf_strptr(elf, shstrndx, shdr->sh_name);
+            if (name == NULL)
+                continue;
+            
+            if (strcmp(name, ".bslug.meta") == 0) {
+                continue;
+            } else if (strcmp(name, ".bslug.data") == 0) {
+                continue;
+            } else if (strcmp(name, ".bslug.load") == 0) {
+                metadata->size += shdr->sh_size / sizeof(bslug_loader_entry_t);
+            } else {
+                metadata->size += shdr->sh_size;
+                /* add alignment padding to size */
+                if (shdr->sh_addralign > 3)
+                    /* roundup to multiple of sh_addralign  */
+                    metadata->size +=
+                        (-metadata->size & (shdr->sh_addralign - 1));
+                else
+                    /* roundup to multiple of 4 */
+                    metadata->size += (-metadata->size & 3);
+            }
+        }
+    }
+    
+    /* roundup to multiple of 4 */
+    metadata->size += (-metadata->size & 3);
+    
+    if (module_list_count == module_list_capacity) {
+        if (module_list_capacity == 0) {
+            module_list =
+                malloc(MODULE_LIST_CAPACITY_DEFAULT *
+                    sizeof(module_metadata_t));
+            
+            if (module_list == NULL)
+                goto exit_error;
+            
+            module_list_capacity = MODULE_LIST_CAPACITY_DEFAULT;
+        } else {
+            module_metadata_t **temp;
+            
+            temp = realloc(
+                module_list,
+                2 * module_list_capacity * sizeof(module_metadata_t));
+            
+            if (temp == NULL)
+                goto exit_error;
+            
+            module_list = temp;
+            module_list_capacity = module_list_capacity * 2;
+        }
+    }
+    
+    assert(module_list != NULL);
+    assert(module_list_count < module_list_capacity);
+    
+    module_list[module_list_count] = metadata;
+    module_list_size += metadata->size;
+    /* prevent the data being freed */
+    metadata = NULL;
+    module_list_count++;
+    
+exit_error:
+    if (metadata != NULL)
+        free(metadata);
+    if (symtab != NULL)
+        free(symtab);
+}
+
+static module_metadata_t *Module_MetadataRead(
+        const char *path, Elf *elf, Elf32_Sym *symtab, size_t symtab_count) {
+    char *metadata = NULL, *metadata_cur, *metadata_end, *tmp;
+    const char *game, *name, *author, *version, *license;
+    module_metadata_t *ret = NULL;
+    Elf_Scn *scn;
+    size_t shstrndx;
+    
+    if (elf_getshdrstrndx(elf, &shstrndx) != 0)
+        goto exit_error;
     
     for (scn = elf_nextscn(elf, NULL);
          scn != NULL;
@@ -321,42 +438,118 @@ static void Module_LoadElf(Elf *elf) {
         name = elf_strptr(elf, shstrndx, shdr->sh_name);
         if (name == NULL)
             continue;
-            
+        
         if (strcmp(name, ".bslug.meta") == 0) {
-            size_t i;
+            if (shdr->sh_size == 0)
+                continue;
             
-            assert(meta_data == NULL);
-            meta_data = malloc(shdr->sh_size);
-            if (meta_data == NULL)
+            assert(metadata == NULL);
+            metadata = malloc(shdr->sh_size);
+            if (metadata == NULL)
                 continue;
                 
-            if (!Module_ElfLoadSection(elf, scn, shdr, meta_data))
+            if (!Module_ElfLoadSection(elf, scn, shdr, metadata))
                 goto exit_error;
             
             Module_ElfLoadSymbols(
-                elf_ndxscn(scn), meta_data, symtab, symtab_count);
+                elf_ndxscn(scn), metadata, symtab, symtab_count);
             
             if (!Module_ElfLink(
-                    elf, elf_ndxscn(scn), meta_data, 0, shdr->sh_size,
+                    elf, elf_ndxscn(scn), metadata, 0, shdr->sh_size,
                     symtab, symtab_count))
                 goto exit_error;
             
-            for (i = 0; i < shdr->sh_size - 1; i++)
-                if (meta_data[i] == '\0')
-                    meta_data[i] = '\n';
-            
+            metadata_end = metadata + shdr->sh_size;
+            metadata_end[-1] = '\0';
             break;
         }
     }
-    
-    if (meta_data == NULL)
+
+    if (metadata == NULL)
         goto exit_error;
     
+    game = NULL;
+    name = NULL;
+    author = NULL;
+    version = NULL;
+    license = NULL;
+    
+    for (metadata_cur = metadata;
+         metadata_cur < metadata_end;
+         metadata_cur = strchr(metadata_cur, '\0') + 1) {
+         
+        char *eq;
+         
+        assert(metadata_cur >= metadata && metadata_cur < metadata_end);
+        
+        if (*metadata_cur == '\0')
+            continue;
+        
+        eq = strchr(metadata_cur, '=');
+        if (eq == NULL)
+            goto exit_error;
+        
+        if (strncmp(metadata_cur, "game", eq - metadata_cur) == 0) {
+            if (game != NULL)
+                goto exit_error;
+            game = eq + 1;
+        } else if (strncmp(metadata_cur, "name", eq - metadata_cur) == 0) {
+            if (name != NULL)
+                goto exit_error;
+            name = eq + 1;
+        } else if (strncmp(metadata_cur, "author", eq - metadata_cur) == 0) {
+            if (author != NULL)
+                goto exit_error;
+            author = eq + 1;
+        } else if (strncmp(metadata_cur, "version", eq - metadata_cur) == 0) {
+            if (version != NULL)
+                goto exit_error;
+            version = eq + 1;
+        } else if (strncmp(metadata_cur, "license", eq - metadata_cur) == 0) {
+            if (license != NULL)
+                goto exit_error;
+            license = eq + 1;
+        } else
+            goto exit_error;
+    }
+    
+    if (game == NULL)
+        game = "";
+    if (name == NULL || author == NULL || version == NULL || license == NULL)
+        goto exit_error;
+    
+    ret = malloc(
+        sizeof(module_metadata_t) + strlen(path) +
+        strlen(game) + strlen(name) + strlen(author) +
+        strlen(version) + strlen(license) + 6);
+    if (ret == NULL)
+        goto exit_error;
+    
+    tmp = (char *)(ret + 1);
+    strcpy(tmp, path);
+    ret->path = tmp;
+    tmp = tmp + strlen(path) + 1;
+    strcpy(tmp, game);
+    ret->game = tmp;
+    tmp = tmp + strlen(game) + 1;
+    strcpy(tmp, name);
+    ret->name = tmp;
+    tmp = tmp + strlen(name) + 1;
+    strcpy(tmp, author);
+    ret->author = tmp;
+    tmp = tmp + strlen(author) + 1;
+    strcpy(tmp, version);
+    ret->version = tmp;
+    tmp = tmp + strlen(version) + 1;
+    strcpy(tmp, license);
+    ret->license = tmp;
+    ret->size = 0;
+    
 exit_error:
-    if (meta_data != NULL)
-        free(meta_data);
-    if (symtab != NULL)
-        free(symtab);
+    if (metadata != NULL)
+        free(metadata);
+        
+    return ret;
 }
 
 static bool Module_ElfLoadSection(

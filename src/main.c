@@ -42,6 +42,8 @@
 
 event_t main_event_fat_loaded;
 
+static void Main_PrintSize(size_t size);
+
 int main(void) {
     int ret;
     void *frame_buffer = NULL;
@@ -120,12 +122,37 @@ int main(void) {
     printf("%.4s", os0->disc.gamename);
     printf("\n");
     
+    
+    printf("Loading modules... ");
+    Event_Wait(&module_list_loaded);
+    if (module_list_count == 0) {
+        printf("no valid modules found!\n");
+    } else {
+        size_t module;
+        
+        printf(
+            "%u module%s found.\n",
+            module_list_count, module_list_count > 1 ? "s" : "");
+        
+        for (module = 0; module < module_list_count; module++) {
+            printf(
+                "\t%s %s by %s (", module_list[module]->name,
+                module_list[module]->version, module_list[module]->author);
+            Main_PrintSize(module_list[module]->size);
+            puts(").");
+        }
+        
+        Main_PrintSize(module_list_size);
+        puts(" total.");
+    }
+    
     Event_Wait(&apploader_event_complete);
 
     if (apploader_game_entry_fn == NULL) {
         fprintf(stderr, "Error... entry point is NULL.\n");
     } else {
         printf("\nPress RESET to launch game.\n");
+        ret = 0;
         goto exit;
         
         while (!SYS_ResetButtonDown())
@@ -156,4 +183,30 @@ exit:
     exit(ret);
         
     return ret;
+}
+
+static void Main_PrintSize(size_t size) {
+    static const char *suffix[] = { "bytes", "KiB", "MiB", "GiB" };
+    unsigned int magnitude, precision;
+    float sizef;
+
+    sizef = size;
+    magnitude = 0;
+    while (sizef > 512) {
+        sizef /= 1024.0f;
+        magnitude++;
+    }
+    
+    assert(magnitude < 4);
+    
+    if (magnitude == 0)
+        precision = 0;
+    else if (sizef >= 100)
+        precision = 0;
+    else if (sizef >= 10)
+        precision = 1;
+    else
+        precision = 2;
+        
+    printf("%.*f %s", precision, sizef, suffix[magnitude]);
 }
