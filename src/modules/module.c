@@ -28,12 +28,12 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <gelf.h>
 #include <libelf.h>
 #include <ogc/lwp.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -55,6 +55,18 @@ static void Module_CheckDirectory(char *path);
 static void Module_CheckFile(const char *path);
 static void Module_Load(const char *path);
 static void Module_LoadElf(Elf *elf);
+static bool Module_ElfLoadSection(
+    const Elf *elf, Elf_Scn *scn, const Elf32_Shdr *shdr,
+    void *destination);
+static void Module_ElfLoadSymbols(
+    size_t shndx, const const void *destination,
+    Elf32_Sym *symtab, size_t symtab_count);
+static bool Module_ElfLink(
+    Elf *elf, size_t shndx, void *destination, size_t offset, size_t size,
+    Elf32_Sym *symtab, size_t symtab_count);
+static bool Module_ElfLinkOne(
+    char type, size_t offset, size_t symbol, int addend, void *destination,
+    Elf32_Sym *symtab, size_t symtab_count);
 
 bool Module_Init(void) {
     return Event_Init(&module_list_loaded);
@@ -131,7 +143,7 @@ static void Module_CheckDirectory(char *path) {
                     if (strcmp(entry->d_name, ".") == 0 ||
                         strcmp(entry->d_name, "..") == 0)
                         break;
-                        
+                    
                     Event_Wait(&apploader_event_disk_id);
                     
                     /* load directories with a prefix match on the game name:
@@ -225,22 +237,389 @@ exit_error:
 
 static void Module_LoadElf(Elf *elf) {
     Elf_Scn *scn;
-    Elf_Data *data;
-    size_t shstrndx;
+    Elf32_Ehdr *ehdr;
+    char *ident;
+    size_t shstrndx, sz, symtab_count, symstrndx;
+    char *meta_data = NULL;
+    Elf32_Sym *symtab = NULL;
     
     assert(elf != NULL);
     assert(elf_kind(elf) == ELF_K_ELF);
     
+    ident = elf_getident(elf, &sz);
+    
+    if (ident == NULL)
+        goto exit_error;
+    if (sz < 7)
+        goto exit_error;
+    if (ident[4] != ELFCLASS32)
+        goto exit_error;
+    if (ident[5] != ELFDATA2MSB)
+        goto exit_error;
+    if (ident[6] != EV_CURRENT)
+        goto exit_error;
+        
+    ehdr = elf32_getehdr(elf);
+    
+    if (ehdr == NULL)
+        goto exit_error;
+    if (ehdr->e_type != ET_REL)
+        goto exit_error;
+    if (ehdr->e_machine != EM_PPC)
+        goto exit_error;
+    if (ehdr->e_version != EV_CURRENT)
+        goto exit_error;
+    
     if (elf_getshdrstrndx(elf, &shstrndx) != 0)
-        return;
+        goto exit_error;
         
     for (scn = elf_nextscn(elf, NULL);
          scn != NULL;
          scn = elf_nextscn(elf, scn)) {
          
-        GElf_Shdr shdr;
-         
-        if (gelf_getshdr(scn, &shdr) != &shdr)
+        Elf32_Shdr *shdr;
+        
+        shdr = elf32_getshdr(scn);
+        if (shdr == NULL)
             continue;
+            
+        if (shdr->sh_type == SHT_SYMTAB) {
+            size_t sym;
+            
+            assert (symtab == NULL);
+            symtab = malloc(shdr->sh_size);
+            if (symtab == NULL)
+                continue;
+            
+            symtab_count = shdr->sh_size / sizeof(symtab[0]);
+            symstrndx = shdr->sh_link;
+
+            if (!Module_ElfLoadSection(elf, scn, shdr, symtab))
+                goto exit_error;
+            
+            for (sym = 0; sym < symtab_count; sym++)
+                symtab[sym].st_other = 0;
+            
+            break;
+        }
+    }
+    
+    if (symtab == NULL)
+        goto exit_error;
+    
+    for (scn = elf_nextscn(elf, NULL);
+         scn != NULL;
+         scn = elf_nextscn(elf, scn)) {
+         
+        Elf32_Shdr *shdr;
+        const char *name;
+        
+        shdr = elf32_getshdr(scn);
+        if (shdr == NULL)
+            continue;
+            
+        name = elf_strptr(elf, shstrndx, shdr->sh_name);
+        if (name == NULL)
+            continue;
+            
+        if (strcmp(name, ".bslug.meta") == 0) {
+            size_t i;
+            
+            assert(meta_data == NULL);
+            meta_data = malloc(shdr->sh_size);
+            if (meta_data == NULL)
+                continue;
+                
+            if (!Module_ElfLoadSection(elf, scn, shdr, meta_data))
+                goto exit_error;
+            
+            Module_ElfLoadSymbols(
+                elf_ndxscn(scn), meta_data, symtab, symtab_count);
+            
+            if (!Module_ElfLink(
+                    elf, elf_ndxscn(scn), meta_data, 0, shdr->sh_size,
+                    symtab, symtab_count))
+                goto exit_error;
+            
+            for (i = 0; i < shdr->sh_size - 1; i++)
+                if (meta_data[i] == '\0')
+                    meta_data[i] = '\n';
+            
+            break;
+        }
+    }
+    
+    if (meta_data == NULL)
+        goto exit_error;
+    
+exit_error:
+    if (meta_data != NULL)
+        free(meta_data);
+    if (symtab != NULL)
+        free(symtab);
+}
+
+static bool Module_ElfLoadSection(
+        const Elf *elf, Elf_Scn *scn, const Elf32_Shdr *shdr,
+        void *destination) {
+    
+    switch (shdr->sh_type) {
+        case SHT_SYMTAB:
+        case SHT_PROGBITS: {
+            Elf_Data *data;
+            size_t n;
+        
+            n = 0;
+            for (data = elf_getdata(scn, NULL);
+                 data != NULL;
+                 data = elf_getdata(scn, data)) {
+                memcpy((char *)destination + n, data->d_buf, data->d_size);
+                n += data->d_size;
+            }
+            return true;
+        } case SHT_NOBITS: {
+            memset(destination, 0, shdr->sh_size);
+            return true;
+        } default:
+            return false;
+    }
+}
+
+static void Module_ElfLoadSymbols(
+        size_t shndx, const const void *destination,
+        Elf32_Sym *symtab, size_t symtab_count) {
+    
+    size_t i;
+    
+    /* use the st_other field (no defined meaning) to indicate whether or not a
+     * symbol address has been calculated. */
+    for (i = 0; i < symtab_count; i++) {
+        if (symtab[i].st_shndx == shndx &&
+            symtab[i].st_other == 0) {
+            
+            symtab[i].st_value += (Elf32_Addr)destination;
+            symtab[i].st_other = 1;
+        }
+    }
+}
+
+static bool Module_ElfLink(
+        Elf *elf, size_t shndx, void *destination, size_t offset, size_t size,
+        Elf32_Sym *symtab, size_t symtab_count) {
+    Elf_Scn *scn;
+    char *start;
+    
+    start = destination - size;
+        
+    for (scn = elf_nextscn(elf, NULL);
+         scn != NULL;
+         scn = elf_nextscn(elf, scn)) {
+         
+        Elf32_Shdr *shdr;
+        
+        shdr = elf32_getshdr(scn);
+        if (shdr != NULL)
+            continue;
+        
+        switch (shdr->sh_type) {
+            case SHT_REL: {
+                const Elf32_Rel *rel;
+                Elf_Data *data;
+                size_t i;
+                
+                if (shdr->sh_info != shndx)
+                    continue;
+                
+                data = elf_getdata(scn, NULL);
+                if (data == NULL)
+                    continue;
+                    
+                rel = data->d_buf;
+                
+                for (i = 0; i < shdr->sh_size / sizeof(Elf32_Rel); i++) {
+                    /* check this relocation is inside the region */
+                    if (rel[i].r_offset + 4 <= offset ||
+                        rel[i].r_offset > offset + size) 
+                        continue;
+                    
+                    /* reject relocations staddling the region */
+                    if (rel[i].r_offset < offset ||
+                        rel[i].r_offset + 4 > offset + size)
+                        return false;
+                    
+                    if (!Module_ElfLinkOne(
+                            ELF32_R_TYPE(rel[i].r_info), rel[i].r_offset,
+                            ELF32_R_SYM(rel[i].r_info), 
+                            *(int *)(start + rel[i].r_offset),
+                            start, symtab, symtab_count))
+                        return false;
+                }
+                break;
+            } case SHT_RELA: {
+                const Elf32_Rela *rela;
+                Elf_Data *data;
+                size_t i;
+                
+                if (shdr->sh_info != shndx)
+                    continue;
+                
+                data = elf_getdata(scn, NULL);
+                if (data == NULL)
+                    continue;
+                    
+                rela = data->d_buf;
+                
+                for (i = 0; i < shdr->sh_size / sizeof(Elf32_Rela); i++) {
+                    /* check this relocation is inside the region */
+                    if (rela[i].r_offset + 4 <= offset ||
+                        rela[i].r_offset > offset + size) 
+                        continue;
+                    
+                    /* reject relocations staddling the region */
+                    if (rela[i].r_offset < offset ||
+                        rela[i].r_offset + 4 > offset + size)
+                        return false;
+                    
+                    if (!Module_ElfLinkOne(
+                            ELF32_R_TYPE(rela[i].r_info), rela[i].r_offset, 
+                            ELF32_R_SYM(rela[i].r_info), rela[i].r_addend,
+                            start, symtab, symtab_count))
+                        return false;
+                }
+                break;
+            }
+        }
+    }
+    
+    return true;
+}
+
+static bool Module_ElfLinkOne(
+        char type, size_t offset, size_t symbol, int addend, void *destination,
+        Elf32_Sym *symtab, size_t symtab_count) {
+    int value;
+    char *target = (char *)destination + offset;
+    Elf32_Addr symbol_addr;
+    
+    switch (type) {
+        case R_PPC_ADDR32:
+        case R_PPC_ADDR16:
+        case R_PPC_UADDR32:
+        case R_PPC_UADDR16: {
+            if (symbol > symtab_count)
+                return false;
+            
+            switch (symtab[symbol].st_shndx) {
+                case SHN_ABS: {
+                    symbol_addr = symtab[symbol].st_value;
+                    break;
+                } case SHN_COMMON:
+                    return false;
+                case SHN_UNDEF:
+                    return false;
+                default: {
+                    if (symtab[symbol].st_other != 1)
+                        return false;
+                    
+                    symbol_addr = symtab[symbol].st_value;
+                    break;
+                }
+            }            
+            break;
+        } default:
+            return false;
+    }
+
+    switch (type) {
+        case R_PPC_ADDR32:
+        case R_PPC_ADDR24:
+        case R_PPC_ADDR16:
+        case R_PPC_ADDR16_HI:
+        case R_PPC_ADDR16_HA:
+        case R_PPC_ADDR16_LO:
+        case R_PPC_ADDR14:
+        case R_PPC_ADDR14_BRTAKEN:
+        case R_PPC_ADDR14_BRNTAKEN:
+        case R_PPC_UADDR32:
+        case R_PPC_UADDR16: {
+            value = symbol_addr + addend;
+        } case R_PPC_REL24:
+        case R_PPC_REL14:
+        case R_PPC_REL14_BRTAKEN:
+        case R_PPC_REL14_BRNTAKEN:
+        case R_PPC_REL32:
+        case R_PPC_ADDR30: {
+            value = symbol_addr + addend - (int)target;
+        } case R_PPC_SECTOFF:
+        case R_PPC_SECTOFF_LO:
+        case R_PPC_SECTOFF_HI:
+        case R_PPC_SECTOFF_HA: {
+            value = offset + addend;
+        } case R_PPC_EMB_NADDR32:
+        case R_PPC_EMB_NADDR16:
+        case R_PPC_EMB_NADDR16_LO:
+        case R_PPC_EMB_NADDR16_HI:
+        case R_PPC_EMB_NADDR16_HA: {
+            value = addend - symbol_addr;
+        } default:
+            return false;
+    }
+    
+    
+    switch (type) {
+        case R_PPC_ADDR32:
+        case R_PPC_UADDR32:
+        case R_PPC_REL32:
+        case R_PPC_SECTOFF:
+        case R_PPC_EMB_NADDR32: {
+            *(int *)target = value;
+            break;
+        } case R_PPC_ADDR24:
+        case R_PPC_REL24: {
+            *(int *)target =
+                (*(int *)target & 0xfc000003) | (value & 0x03fffffc);
+            break;
+        } case R_PPC_ADDR16:
+        case R_PPC_UADDR16:
+        case R_PPC_EMB_NADDR16: {
+            *(short *)target = value;
+            break;
+        } case R_PPC_ADDR16_HI:
+        case R_PPC_SECTOFF_HI:
+        case R_PPC_EMB_NADDR16_HI: {
+            *(short *)target = value >> 16;
+            break;
+        } case R_PPC_ADDR16_HA:
+        case R_PPC_SECTOFF_HA:
+        case R_PPC_EMB_NADDR16_HA: {
+            *(short *)target = (value >> 16) + ((value >> 15) & 1);
+            break;
+        } case R_PPC_ADDR16_LO:
+        case R_PPC_SECTOFF_LO:
+        case R_PPC_EMB_NADDR16_LO: {
+            *(short *)target = value & 0xffff;
+            break;
+        } case R_PPC_ADDR14:
+        case R_PPC_REL14: {
+            *(int *)target =
+                (*(int *)target & 0xffff0003) | (value & 0x0000fffc);
+            break;
+        } case R_PPC_ADDR14_BRTAKEN:
+        case R_PPC_REL14_BRTAKEN: {
+            *(int *)target =
+                (*(int *)target & 0xffdf0003) | (value & 0x0000fffc) |
+                0x00200000;
+            break;
+        } case R_PPC_ADDR14_BRNTAKEN:
+        case R_PPC_REL14_BRNTAKEN: {
+            *(int *)target =
+                (*(int *)target & 0xffdf0003) | (value & 0x0000fffc);
+            break;
+        } case R_PPC_ADDR30: {
+            *(int *)target =
+                (*(int *)target & 0x00000003) | (value & 0xfffffffc);
+            break;
+        } default:
+            return false;
     }
 }
