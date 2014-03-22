@@ -445,6 +445,8 @@ fsm_t *FSM_Merge(const fsm_t *left, const fsm_t *right) {
     fsm_t *fsm = NULL;
     unsigned int processed_nodes, i, common_index;
     
+    assert(left != NULL && right != NULL);
+    
     fsm = malloc(sizeof(fsm_t));
     
     if (fsm == NULL)

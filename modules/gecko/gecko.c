@@ -314,6 +314,9 @@ static const unsigned char codes_gct[] = {
   0x00, 0xd0, 0xc0, 0xde, 0x00, 0xd0, 0xc0, 0xde, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+extern const char vi_wii_hook[];
+
 BSLUG_LOAD(0x80001000, multidol, sizeof(multidol));
 BSLUG_LOAD(0x80001800, codehandler, sizeof(codehandler));
 BSLUG_LOAD(0x800028B8, codes_gct, sizeof(codes_gct));
+BSLUG_REPLACE(vi_wii_hook, codehandler + 0xa8);

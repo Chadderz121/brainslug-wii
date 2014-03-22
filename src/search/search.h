@@ -1,4 +1,4 @@
-/* search.c
+/* search.h
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -25,4 +25,16 @@
 /* This file should ideally avoid Wii specific methods so unit testing can be
  * conducted elsewhere. */
  
-#include "search.h"
+#ifndef SEARCH_H_
+#define SEARCH_H_
+
+#include <stdbool.h>
+
+#include "library/event.h"
+
+extern event_t search_event_completed;
+
+bool Search_Init(void);
+bool Search_RunBackground(void);
+
+#endif /* SEARCH_H_ */

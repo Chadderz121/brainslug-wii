@@ -12,7 +12,8 @@
 
 typedef enum bslug_loader_entry_type_t {
     BSLUG_LOADER_ENTRY_FUNCTION,
-    BSLUG_LOADER_ENTRY_LOAD
+    BSLUG_LOADER_ENTRY_LOAD,
+    BSLUG_LOADER_ENTRY_GLOBAL
 } bslug_loader_entry_type_t;
 
 typedef struct bslug_loader_entry_t {
@@ -27,6 +28,9 @@ typedef struct bslug_loader_entry_t {
             const void *data;
             size_t size;
         } load;
+        struct {
+            const void *target;
+        } global;
     } data;
 } bslug_loader_entry_t;
 

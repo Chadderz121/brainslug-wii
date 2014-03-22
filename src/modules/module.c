@@ -44,14 +44,39 @@
 #include "main.h"
 #include "threads.h"
 
-#define MODULE_LIST_CAPACITY_DEFAULT 16
+typedef struct {
+    const char *name;
+    void *address;
+    char type;
+    int addend;
+} module_unresolved_relocation_t;
+
+typedef struct {
+    const char *name;
+    void *address;
+} module_symbol_t;
 
 event_t module_fat_loaded;
 event_t module_list_loaded;
+
+#define MODULE_LIST_CAPACITY_DEFAULT 16
+
 size_t module_list_size = 0;
 module_metadata_t **module_list = NULL;
 size_t module_list_count = 0;
 static size_t module_list_capacity = 0;
+
+#define MODULE_RELOCATIONS_CAPCITY_DEFAULT 128
+
+static module_unresolved_relocation_t *module_relocations = NULL;
+static size_t module_relocations_count = 0;
+static size_t module_relocations_capacity = 0;
+
+#define MODULE_SYMBOLS_DEFAULT 128
+
+static module_symbol_t **module_symbols = NULL;
+static size_t module_symbols_count = 0;
+static size_t module_symbols_capacity = 0;
 
 static const char module_path[] = "sd:/bslug/modules";
 
@@ -61,6 +86,8 @@ static void Module_CheckDirectory(char *path);
 static void Module_CheckFile(const char *path);
 static void Module_Load(const char *path);
 static void Module_LoadElf(const char *path, Elf *elf);
+static bool Module_LoadElfSymtab(
+    Elf *elf, size_t *symtab_strndx, Elf32_Sym **symtab, size_t *symtab_count);
 static module_metadata_t *Module_MetadataRead(
     const char *path, Elf *elf, Elf32_Sym *symtab, size_t symtab_count);
 static bool Module_ElfLoadSection(
@@ -70,10 +97,12 @@ static void Module_ElfLoadSymbols(
     Elf32_Sym *symtab, size_t symtab_count);
 static bool Module_ElfLink(
     Elf *elf, size_t shndx, void *destination, size_t offset, size_t size,
-    Elf32_Sym *symtab, size_t symtab_count);
+    Elf32_Sym *symtab, size_t symtab_count, bool allow_globals);
 static bool Module_ElfLinkOne(
-    char type, size_t offset, size_t symbol, int addend, void *destination,
-    Elf32_Sym *symtab, size_t symtab_count);
+    Elf *elf, char type, size_t offset, size_t symbol, int addend,
+    void *destination, Elf32_Sym *symtab, size_t symtab_count,
+    bool allow_globals);
+static bool Module_ListLink(void);
 
 bool Module_Init(void) {
     return Event_Init(&module_list_loaded);
@@ -101,6 +130,35 @@ static void *Module_Main(void *arg) {
     Event_Trigger(&module_list_loaded);
     
     return NULL;
+}
+
+static void *Module_ListAllocate(
+        void **list, size_t entry_size, size_t *capacity, size_t *count,
+        size_t default_capacity) {
+    void *result;
+    
+    if (*capacity == *count) {
+        if (*count == 0) {
+            *list = malloc(entry_size * default_capacity);
+            
+            if (*list == NULL)
+                return NULL;
+            
+            *capacity = default_capacity
+        } else {
+            void *temp;
+            
+            temp = realloc(*list, entry_size * *capacity * 2);
+            if (temp == NULL)
+                return NULL;
+            
+            *list = temp;
+            *capacity = *capacity * 2;
+        }
+    }
+    
+    result = (char *)*list + entry_size * *count;
+    (*count)++;
 }
 
 static void Module_ListLoad(void) {
@@ -227,7 +285,7 @@ static void Module_Load(const char *path) {
     switch (elf_kind(elf)) {
         case ELF_K_AR:
             /* TODO */
-            break;
+            goto exit_error;
         case ELF_K_ELF:
             Module_LoadElf(path, elf);
             break;
@@ -246,9 +304,10 @@ static void Module_LoadElf(const char *path, Elf *elf) {
     Elf_Scn *scn;
     Elf32_Ehdr *ehdr;
     char *ident;
-    size_t shstrndx, sz, symtab_count, symstrndx, i;
+    size_t shstrndx, sz, symtab_count, i, symtab_strndx;
     Elf32_Sym *symtab = NULL;
     module_metadata_t *metadata = NULL;
+    module_metadata_t **list_ptr;
     
     assert(elf != NULL);
     assert(elf_kind(elf) == ELF_K_ELF);
@@ -277,39 +336,10 @@ static void Module_LoadElf(const char *path, Elf *elf) {
     if (ehdr->e_version != EV_CURRENT)
         goto exit_error;
         
-    for (scn = elf_nextscn(elf, NULL);
-         scn != NULL;
-         scn = elf_nextscn(elf, scn)) {
-         
-        Elf32_Shdr *shdr;
-        
-        shdr = elf32_getshdr(scn);
-        if (shdr == NULL)
-            continue;
-            
-        if (shdr->sh_type == SHT_SYMTAB) {
-            size_t sym;
-            
-            assert (symtab == NULL);
-            symtab = malloc(shdr->sh_size);
-            if (symtab == NULL)
-                continue;
-            
-            symtab_count = shdr->sh_size / sizeof(symtab[0]);
-            symstrndx = shdr->sh_link;
-
-            if (!Module_ElfLoadSection(elf, scn, shdr, symtab))
-                goto exit_error;
-            
-            for (sym = 0; sym < symtab_count; sym++)
-                symtab[sym].st_other = 0;
-            
-            break;
-        }
-    }
-    
-    if (symtab == NULL)
+    if (!Module_LoadElfSymtab(elf, &symtab_strndx, &symtab, &symtab_count))
         goto exit_error;
+        
+    assert(symtab != NULL);
         
     metadata = Module_MetadataRead(path, elf, symtab, symtab_count);
     
@@ -333,7 +363,7 @@ static void Module_LoadElf(const char *path, Elf *elf) {
     for (scn = elf_nextscn(elf, NULL);
          scn != NULL;
          scn = elf_nextscn(elf, scn)) {
-         
+        
         Elf32_Shdr *shdr;
         
         shdr = elf32_getshdr(scn);
@@ -372,45 +402,72 @@ static void Module_LoadElf(const char *path, Elf *elf) {
     /* roundup to multiple of 4 */
     metadata->size += (-metadata->size & 3);
     
-    if (module_list_count == module_list_capacity) {
-        if (module_list_capacity == 0) {
-            module_list =
-                malloc(MODULE_LIST_CAPACITY_DEFAULT *
-                    sizeof(module_metadata_t));
-            
-            if (module_list == NULL)
-                goto exit_error;
-            
-            module_list_capacity = MODULE_LIST_CAPACITY_DEFAULT;
-        } else {
-            module_metadata_t **temp;
-            
-            temp = realloc(
-                module_list,
-                2 * module_list_capacity * sizeof(module_metadata_t));
-            
-            if (temp == NULL)
-                goto exit_error;
-            
-            module_list = temp;
-            module_list_capacity = module_list_capacity * 2;
-        }
-    }
+    list_ptr = Module_ListAllocate(
+        module_list, sizeof(module_metadata_t *), &module_list_capacity,
+        &module_list_count, MODULE_LIST_CAPACITY_DEFAULT);
+    if (list_ptr == NULL)
+        goto exit_error;
     
     assert(module_list != NULL);
-    assert(module_list_count < module_list_capacity);
+    assert(module_list_count <= module_list_capacity);
     
-    module_list[module_list_count] = metadata;
+    *list_ptr = metadata;
     module_list_size += metadata->size;
     /* prevent the data being freed */
     metadata = NULL;
-    module_list_count++;
     
 exit_error:
     if (metadata != NULL)
         free(metadata);
     if (symtab != NULL)
         free(symtab);
+}
+
+static bool Module_LoadElfSymtab(
+        Elf *elf, size_t *symtab_strndx, Elf32_Sym **symtab,
+        size_t *symtab_count) {
+    Elf_Scn *scn;
+    bool result = false;
+
+    for (scn = elf_nextscn(elf, NULL);
+         scn != NULL;
+         scn = elf_nextscn(elf, scn)) {
+         
+        Elf32_Shdr *shdr;
+        
+        shdr = elf32_getshdr(scn);
+        if (shdr == NULL)
+            continue;
+            
+        if (shdr->sh_type == SHT_SYMTAB) {
+            size_t sym;
+            
+            assert (*symtab == NULL);
+            *symtab = malloc(shdr->sh_size);
+            if (*symtab == NULL)
+                continue;
+            
+            *symtab_count = shdr->sh_size / sizeof(Elf32_Sym);
+            *symtab_strndx = shdr->sh_link;
+
+            if (!Module_ElfLoadSection(elf, scn, shdr, *symtab))
+                goto exit_error;
+            
+            for (sym = 0; sym < *symtab_count; sym++)
+                (*symtab)[sym].st_other = 0;
+            
+            
+            
+            break;
+        }
+    }
+    
+    if (*symtab == NULL)
+        goto exit_error;
+    
+    result = true;
+exit_error:
+    return result;
 }
 
 static module_metadata_t *Module_MetadataRead(
@@ -456,7 +513,7 @@ static module_metadata_t *Module_MetadataRead(
             
             if (!Module_ElfLink(
                     elf, elf_ndxscn(scn), metadata, 0, shdr->sh_size,
-                    symtab, symtab_count))
+                    symtab_strndx, symtab, symtab_count, false))
                 goto exit_error;
             
             metadata_end = metadata + shdr->sh_size;
@@ -598,7 +655,8 @@ static void Module_ElfLoadSymbols(
 
 static bool Module_ElfLink(
         Elf *elf, size_t shndx, void *destination, size_t offset, size_t size,
-        Elf32_Sym *symtab, size_t symtab_count) {
+        Elf32_Sym *symtab, size_t symtab_strndx, size_t symtab_count,
+        bool allow_globals) {
     Elf_Scn *scn;
     char *start;
     
@@ -641,10 +699,11 @@ static bool Module_ElfLink(
                         return false;
                     
                     if (!Module_ElfLinkOne(
-                            ELF32_R_TYPE(rel[i].r_info), rel[i].r_offset,
+                            elf, ELF32_R_TYPE(rel[i].r_info), rel[i].r_offset,
                             ELF32_R_SYM(rel[i].r_info), 
                             *(int *)(start + rel[i].r_offset),
-                            start, symtab, symtab_count))
+                            start, symtab_strndx, symtab, symtab_count,
+                            allow_globals))
                         return false;
                 }
                 break;
@@ -674,9 +733,10 @@ static bool Module_ElfLink(
                         return false;
                     
                     if (!Module_ElfLinkOne(
-                            ELF32_R_TYPE(rela[i].r_info), rela[i].r_offset, 
+                            elf, ELF32_R_TYPE(rela[i].r_info), rela[i].r_offset, 
                             ELF32_R_SYM(rela[i].r_info), rela[i].r_addend,
-                            start, symtab, symtab_count))
+                            start, symtab_strndx, symtab, symtab_count,
+                            allow_globals))
                         return false;
                 }
                 break;
@@ -688,8 +748,9 @@ static bool Module_ElfLink(
 }
 
 static bool Module_ElfLinkOne(
-        char type, size_t offset, size_t symbol, int addend, void *destination,
-        Elf32_Sym *symtab, size_t symtab_count) {
+        Elf *elf, char type, size_t offset, size_t symbol, int addend,
+        void *destination, size_t symtab_strndx, Elf32_Sym *symtab,
+        size_t symtab_count, bool allow_globals) {
     int value;
     char *target = (char *)destination + offset;
     Elf32_Addr symbol_addr;
@@ -708,9 +769,37 @@ static bool Module_ElfLinkOne(
                     break;
                 } case SHN_COMMON:
                     return false;
-                case SHN_UNDEF:
-                    return false;
-                default: {
+                case SHN_UNDEF: {
+                    if (allow_globals) {
+                        module_unresolved_relocation_t *reloc;
+                        char *name;
+                        
+                        reloc = Module_ListAllocate(
+                            module_relocations,
+                            sizeof(module_unresolved_relocation_t),
+                            &module_relocations_capacity,
+                            &module_relocations_count,
+                            MODULE_RELOCATIONS_CAPCITY_DEFAULT);
+                        if (reloc == NULL)
+                            goto exit_error;
+                        
+                        name = elf_strptr(
+                            elf, symtab_strndx, symtab[symbol].st_name);
+                        
+                        reloc->name = strdup(name);
+                        if (reloc->name == NULL) {
+                            module_relocations_count--;
+                            goto exit_error;
+                        }
+                        
+                        reloc->address = target;
+                        reloc->type = type;
+                        reloc->addend = addend;
+                        
+                        return true;
+                    } else
+                        return false;
+                } default: {
                     if (symtab[symbol].st_other != 1)
                         return false;
                     
@@ -815,4 +904,198 @@ static bool Module_ElfLinkOne(
         } default:
             return false;
     }
+}
+
+static bool Module_ListLink(void) {
+    size_t i;
+    uint8_t *space;
+    Elf *elf = NULL;
+    bool result = false;
+    
+    space = (uint8_t *)0x81800000;
+    
+    for (i = 0; i < module_list_count; i++) {
+        if (!Module_LinkModule(module_list[i]->path), &space)
+            goto exit_error;
+    }
+    
+    assert(space + module_list_size <= (uint8_t *)0x81800000);
+    
+    result = true;
+exit_error:
+    return result;
+}
+
+static bool Module_LinkModule(const void char *path, uint8_t **space) {
+    int fd = -1;
+    Elf *elf = NULL;
+    bool result = false;
+    
+    /* check for compile errors */
+    assert(elf_version(EV_CURRENT) != EV_NONE);
+    
+    fd = open(path, O_RDONLY, 0);
+    
+    if (fd == -1)
+        goto exit_error;
+        
+    elf = elf_begin(fd, ELF_C_READ, NULL);
+    
+    if (elf == NULL)
+        goto exit_error;
+        
+    switch (elf_kind(elf)) {
+        case ELF_K_AR:
+            /* TODO */
+            goto exit_error;
+        case ELF_K_ELF:
+            if (!Module_LinkModuleElf(elf, space))
+                goto exit_error;
+            break;
+        default:
+            goto exit_error;
+    }
+
+    result = true;
+exit_error:
+    if (elf != NULL)
+        elf_end(elf);
+    if (fd != -1)
+        close(fd);
+    return result;
+}
+
+static bool Module_LinkModuleElf(Elf *elf, uint8_t **space) {
+    Elf_Scn *scn;
+    size_t symtab_count, section_count, shstrndx, symtab_strndx, entries_count;
+    Elf32_Sym *symtab = NULL;
+    uint8_t *data = NULL, **destinations = NULL;
+    bslug_loader_entry_t *entries = NULL;
+    bool result = false;
+        
+    if (!Module_LoadElfSymtab(elf, &symtab_strndx, &symtab, &symtab_count))
+        goto exit_error;
+    
+    assert(symtab != NULL);
+    
+    if (elf_getshdrnum(elf, &section_count) != 0)
+        goto exit_error;
+    if (elf_getshdrstrndx(elf, &shstrndx) != 0)
+        goto exit_error;
+    
+    destinations = malloc(sizeof(uint8_t *) * section_count);
+    
+    for (scn = elf_nextscn(elf, NULL);
+         scn != NULL;
+         scn = elf_nextscn(elf, scn)) {
+        
+        Elf32_Shdr *shdr;
+        
+        shdr = elf32_getshdr(scn);
+        if (shdr == NULL)
+            continue;
+        
+        if ((shdr->sh_type == SHT_PROGBITS || shdr->sh_type == SHT_NOBITS) && 
+            (shdr->sh_flags & SHF_ALLOC)) {
+            
+            const char *name;
+                
+            name = elf_strptr(elf, shstrndx, shdr->sh_name);
+            if (name == NULL)
+                continue;
+            
+            if (strcmp(name, ".bslug.meta") == 0) {
+                continue;
+            } else if (strcmp(name, ".bslug.data") == 0) {
+                if (data != NULL)
+                    goto exit_error;
+                data = malloc(shdr->sh_size);
+                if (data == NULL)
+                    goto exit_error;
+                
+                destinations[elf_ndxscn(scn)] = data;
+                if (!Module_ElfLoadSection(elf, scn, shdr, data))
+                    goto exit_error;
+            } else if (strcmp(name, ".bslug.load") == 0) {
+                if (entries != NULL)
+                    goto exit_error;
+                entries = malloc(shdr->sh_size);
+                if (entries == NULL)
+                    goto exit_error;
+                
+                destinations[elf_ndxscn(scn)] = entries;
+                if (!Module_ElfLoadSection(elf, scn, shdr, entries))
+                    goto exit_error;
+                Module_ElfLoadSymbols(
+                    elf_ndxscn(scn), entries, symtab, symtab_count);
+                entries_count = shdr->sh_size / sizeof(bslug_loader_entry_t);
+            } else {
+                *space -= shdr->sh_size;
+                if (shdr->sh_addralign > 3)
+                    *space = (uint8_t *)(-(int)*space & 
+                        (shdr->sh_addralign - 1));
+                else 
+                    *space = (uint8_t *)(-(int)*space & 3);
+                
+                destinations[elf_ndxscn(scn)] = space;
+                if (!Module_ElfLoadSection(elf, scn, shdr, space))
+                    goto exit_error;
+                Module_ElfLoadSymbols(
+                    elf_ndxscn(scn), space, symtab, symtab_count);
+            }
+        }
+    }
+    
+    if (entries != NULL) {
+        size_t i;
+        
+        for (i = 0; i < entries_count; i++) {
+            switch (entries[i].type) {
+                case BSLUG_LOADER_ENTRY_FUNCTION: {
+                    
+                    break;
+                } case BSLUG_LOADER_ENTRY_LOAD: {
+                    Event_Wait(&apploader_event_complete);
+                                      
+                    break;
+                } case BSLUG_LOADER_ENTRY_GLOBAL: {
+                    
+                    break;
+                } default:
+                    goto exit_error;
+            }
+        }
+    }
+    
+    for (scn = elf_nextscn(elf, NULL);
+         scn != NULL;
+         scn = elf_nextscn(elf, scn)) {
+        
+        Elf32_Shdr *shdr;
+        
+        shdr = elf32_getshdr(scn);
+        if (shdr == NULL)
+            continue;
+        
+        if ((shdr->sh_type == SHT_PROGBITS || shdr->sh_type == SHT_NOBITS) && 
+            (shdr->sh_flags & SHF_ALLOC)) {
+            
+            if (!Module_ElfLink(
+                    elf, elf_ndxscn(scn), destinations[elf_ndxscn(scn)],
+                    0, symtab_strndx, shdr->sh_size, symtab, symtab_count))
+                goto exit_error;
+        }
+    }
+    
+    result = true:
+exit_error:
+    if (destinations != NULL)
+        free(destinations);
+    if (entries != NULL)
+        free(entries);
+    if (data != NULL)
+        free(data);
+    if (symtab != NULL)
+        free(symtab);
+    return result;
 }

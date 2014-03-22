@@ -38,6 +38,7 @@
 #include "library/dolphin_os.h"
 #include "library/event.h"
 #include "modules/module.h"
+#include "search/search.h"
 #include "threads.h"
 
 event_t main_event_fat_loaded;
@@ -60,6 +61,8 @@ int main(void) {
         goto exit_error;
     if (!Module_Init())
         goto exit_error;
+    if (!Search_Init())
+        goto exit_error;
     
     /* main thread is UI, so set thread prior to UI */
     LWP_SetThreadPriority(LWP_GetSelf(), THREAD_PRIO_UI);
@@ -68,6 +71,8 @@ int main(void) {
     if (!Apploader_RunBackground())
         goto exit_error;
     if (!Module_RunBackground())
+        goto exit_error;
+    if (!Search_RunBackground())
         goto exit_error;
 
     /* configure the video */
@@ -121,8 +126,7 @@ int main(void) {
     Event_Wait(&apploader_event_disk_id);
     printf("%.4s", os0->disc.gamename);
     printf("\n");
-    
-    
+        
     printf("Loading modules... ");
     Event_Wait(&module_list_loaded);
     if (module_list_count == 0) {

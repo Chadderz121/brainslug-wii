@@ -62,6 +62,12 @@ typedef void (*apploader_entry_t)(
 event_t apploader_event_disk_id;
 event_t apploader_event_complete;
 apploader_game_entry_t apploader_game_entry_fn = NULL;
+uint8_t *apploader_app0_start = NULL;
+uint8_t *apploader_app0_end = NULL;
+uint8_t *apploader_app1_start = NULL;
+uint8_t *apploader_app1_end = NULL;
+
+#define APPLOADER_APP1_BOUNDARY ((void *)0x81200000)
 
 static u32 apploader_ipc_tmd[0x4A00 / 4] ATTRIBUTE_ALIGN(32);
 
@@ -191,6 +197,40 @@ static void *Aploader_Main(void *arg) {
 
         if (destination >= (void *)(0x81800000 - module_list_size))
             destination = (char *)destination - module_list_size;
+        
+        if (destination < APPLOADER_APP1_BOUNDARY) {
+            uint8_t *range_start, *range_end;
+
+            range_start = destination;
+            range_end = range_start + length;
+            
+            if (apploader_app0_start == NULL ||
+                range_start < apploader_app0_start) {
+                
+                apploader_app0_start = range_start;
+            }
+            if (apploader_app0_end == NULL ||
+                range_end > apploader_app0_end) {
+                
+                apploader_app0_end = range_end;
+            }
+        } else {
+            uint8_t *range_start, *range_end;
+
+            range_start = destination;
+            range_end = range_start + length;
+            
+            if (apploader_app1_start == NULL ||
+                range_start < apploader_app1_start) {
+                
+                apploader_app1_start = range_start;
+            }
+            if (apploader_app1_end == NULL ||
+                range_end > apploader_app1_end) {
+                
+                apploader_app1_end = range_end;
+            }
+        }
 
         do {
             ret = DI_Read(destination, length, offset & ~3);

@@ -28,6 +28,7 @@
 #include "symbol.h"
 
 #include <assert.h>
+#include <elfdefinitions.h>
 #include <mxml.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -41,7 +42,7 @@ typedef struct {
 } symbol_alphabetical_index_t;
 
 const struct {
-    relocation_t relocation;
+    unsigned char relocation;
     const char *name;
     uint8_t mask[4];
 } symbol_relocation_strings[] = {
@@ -55,7 +56,7 @@ const struct {
 };
 
 #ifndef FMT_SIZE
-#define FMT_SIZE "z"
+#define FMT_SIZE ""
 #endif
 
 #define SYMBOL_RELOCATION_STRINGS_COUNT \
@@ -74,7 +75,7 @@ static symbol_alphabetical_index_t *symbol_alphabetical_index = NULL;
 static symbol_t *Symbol_AllocSymbol(const char *name, size_t name_length);
 static symbol_relocation_t *Symbol_AddRelocation(
     symbol_t *symbol, const char *target,
-    relocation_t type, size_t offset);
+    unsigned char type, size_t offset);
 
 symbol_t *Symbol_GetSymbol(symbol_index_t index) {
     assert(symbol_globals != NULL);
@@ -83,7 +84,7 @@ symbol_t *Symbol_GetSymbol(symbol_index_t index) {
 }
 
 bool Symbol_ParseFile(FILE *file) {
-    bool result;
+    bool result = false;
     mxml_node_t *xml_tree = NULL;
     mxml_node_t *xml_symbols = NULL;
     mxml_node_t *xml_symbol = NULL;
@@ -226,6 +227,8 @@ bool Symbol_ParseFile(FILE *file) {
                 }
                 xml_value = xml_value->next;
             }
+            
+            symbol->offset += data_size / 2;
         } else {
             symbol->data = data = NULL;
             symbol->mask = mask = NULL;
@@ -238,7 +241,7 @@ bool Symbol_ParseFile(FILE *file) {
         while (xml_reloc != NULL) {
             const char *type_str, *offset_str, *symbol_str;
             symbol_relocation_t *relocation;
-            relocation_t type = R_PPC_NONE;
+            unsigned char type = R_PPC_NONE;
             size_t offset;
             const uint8_t *relocation_mask = NULL;
             int i;
@@ -290,10 +293,7 @@ next_symbol:
     }
 
     result = true;
-    goto exit;
 exit_error:
-    result = false;
-exit:
     mxmlDelete(xml_tree);
     return result;
 }
@@ -351,7 +351,7 @@ static symbol_t *Symbol_AllocSymbol(const char *name, size_t name_length) {
 
 static symbol_relocation_t *Symbol_AddRelocation(
         symbol_t *symbol, const char *target,
-        relocation_t type, size_t offset) {
+        unsigned char type, size_t offset) {
     char *name_alloc;
     symbol_relocation_t *relocation;
     

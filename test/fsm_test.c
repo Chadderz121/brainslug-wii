@@ -23,13 +23,13 @@
  */
 
 
-#include "../src/linker/symbol.h"
+#include "../src/search/symbol.h"
 
 #define Symbol_GetSymbol(index) (&fsm_test_symbol[index])
 
-symbol_t fsm_test_symbol[3];
+symbol_t fsm_test_symbol[4];
 
-#include "../src/linker/fsm.c"
+#include "../src/search/fsm.c"
  
 #include "fsm_test.h"
 

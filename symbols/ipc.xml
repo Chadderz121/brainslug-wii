@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols relating to communication with starlet -->
+<symbols>
+    <symbol name="IOS_OpenAsync" size="0x118" offset="0" >
+        <data>
+            9421FFD0 7C0802A6 90010034 39610030
+            4BE8DDB1 34010008 7C7B1B78 7C9C2378
+            7CBD2B78 7CDF3378 3BC00000 4082000C
+            3BC0FFFC 4800004C 806D???? 38800040
+            38A00020
+        </data>
+    </symbol>
+    <symbol name="IOS_Open" size="0x120" offset="0" >
+        <data>
+            9421FFE0 7C0802A6 90010024 34010008
+            93E1001C 93C10018 3BC00000 93A10014
+            7C9D2378 93810010 7C7C1B78 4082000C
+            3BC0FFFC 4800004C 806D???? 38800040
+        </data>
+    </symbol>
+    <symbol name="IOS_CloseAsync" size="0xc0" offset="0" >
+        <data>
+            9421FFE0 7C0802A6 90010024 34010008
+            93E1001C 3BE00000 93C10018 7CBE2B78
+            93A10014 7C9D2378 93810010 7C7C1B78
+            4082000C 3BE0FFFC 4800004C 806D????
+            38800040 38A00020 4??????? 2C030000
+            90610008 4082000C 3BE0FFEA 48000028
+            93A30020
+        </data>
+    </symbol>
+    <symbol name="IOS_Close" size="0xa8" offset="0" >
+        <data>
+            9421FFE0 7C0802A6 90010024 34010008
+            93E1001C 3BE00000 93C10018 7C7E1B78
+            4082000C 3BE0FFFC 4800004C 806D????
+        </data>
+    </symbol>
+</symbols>
