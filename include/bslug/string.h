@@ -1,4 +1,4 @@
-/* search.h
+/* string.h
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -22,23 +22,18 @@
  * SOFTWARE.
  */
 
-/* This file should ideally avoid Wii specific methods so unit testing can be
- * conducted elsewhere. */
- 
-#ifndef SEARCH_H_
-#define SEARCH_H_
+/* definitions of standard symbols in the string.h header file for which the
+ * brainslug symbol information is available. */
 
-#include <stdbool.h>
+#ifndef _STRING_H_
+#define _STRING_H_
 
-#include "library/event.h"
+#include <stddef.h>
 
-extern event_t search_event_complete;
+#ifndef NULL
+#define NULL 0
+#endif
 
-bool Search_Init(void);
-bool Search_RunBackground(void);
+void *memcpy(void *destination, const void *source, size_t num);
 
-bool Search_SymbolAdd(const char *name, void *address);
-bool Search_SymbolReplace(const char *name, void *address);
-void *Search_SymbolLookup(const char *name);
-
-#endif /* SEARCH_H_ */
+#endif /* _STRING_H_ */

@@ -1,4 +1,4 @@
-/* search.h
+/* rvl/ipc.h
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -22,23 +22,46 @@
  * SOFTWARE.
  */
 
-/* This file should ideally avoid Wii specific methods so unit testing can be
- * conducted elsewhere. */
+/* definitions of standard symbols typically in the ogc/ipc.h header file for
+ * which the brainslug symbol information is available. */
  
-#ifndef SEARCH_H_
-#define SEARCH_H_
+#ifndef _RVL_IPC_H_
+#define _RVL_IPC_H_
 
-#include <stdbool.h>
+#include <stddef.h> /* for size_t */
 
-#include "library/event.h"
+#define IPC_MAXPATH_LEN 64
 
-extern event_t search_event_complete;
+typedef enum {
+    IPC_OK = 0,
+    IPC_EINVAL = -4,
+    IPC_ENOENT = -6,
+    IPC_EQUEUEFULL = -8,
+    IPC_ENOMEM = -22,
+} ios_ret_t;
 
-bool Search_Init(void);
-bool Search_RunBackground(void);
+typedef enum {
+    IPC_OPEN_NONE = 0,
+    IPC_OPEN_READ = 1,
+    IPC_OPEN_WRITE = 2,
+    IPC_OPEN_RW = IPC_OPEN_READ + IPC_OPEN_WRITE
+} ios_mode_t;
 
-bool Search_SymbolAdd(const char *name, void *address);
-bool Search_SymbolReplace(const char *name, void *address);
-void *Search_SymbolLookup(const char *name);
+typedef void *usr_t;
+typedef int ios_fd_t;
+typedef void (*ios_open_cb_t)(ios_fd_t result, usr_t usrdata);
+typedef void (*ios_cb_t)(ios_ret_t result, usr_t usrdata);
 
-#endif /* SEARCH_H_ */
+typedef struct _ioctlv {
+	void *data;
+	size_t len;
+} ioctlv;
+
+ios_fd_t IOS_Open(const char *filepath, ios_mode_t mode);
+ios_ret_t IOS_OpenAsync(
+    const char *filepath, ios_mode_t mode, ios_open_cb_t cb, usr_t usrdata);
+    
+ios_ret_t IOS_Close(ios_fd_t fd);
+ios_ret_t IOS_CloseAsync(ios_fd_t fd, ios_cb_t cb, usr_t usrdata);
+
+#endif /* _RVL_IPC_H_ */

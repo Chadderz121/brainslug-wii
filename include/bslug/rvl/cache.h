@@ -1,4 +1,4 @@
-/* search.h
+/* rvl/cache.h
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -22,23 +22,16 @@
  * SOFTWARE.
  */
 
-/* This file should ideally avoid Wii specific methods so unit testing can be
- * conducted elsewhere. */
+/* definitions of standard symbols typically in the ogc/cache.h header file for
+ * which the brainslug symbol information is available. */
  
-#ifndef SEARCH_H_
-#define SEARCH_H_
+#ifndef _RVL_CACHE_H_
+#define _RVL_CACHE_H_
 
-#include <stdbool.h>
+#include <stddef.h> /* for size_t */
 
-#include "library/event.h"
+void DCFlushRange(const void *start, size_t length);
 
-extern event_t search_event_complete;
+void ICInvalidateRange(const void *start, size_t length);
 
-bool Search_Init(void);
-bool Search_RunBackground(void);
-
-bool Search_SymbolAdd(const char *name, void *address);
-bool Search_SymbolReplace(const char *name, void *address);
-void *Search_SymbolLookup(const char *name);
-
-#endif /* SEARCH_H_ */
+#endif /* _RVL_CACHE_H_ */

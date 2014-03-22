@@ -128,7 +128,7 @@ int main(void) {
     printf("\n");
         
     printf("Loading modules... ");
-    Event_Wait(&module_list_loaded);
+    Event_Wait(&module_event_list_loaded);
     if (module_list_count == 0) {
         printf("no valid modules found!\n");
     } else {
@@ -151,6 +151,8 @@ int main(void) {
     }
     
     Event_Wait(&apploader_event_complete);
+    
+    Event_Wait(&module_event_complete);
 
     if (apploader_game_entry_fn == NULL) {
         fprintf(stderr, "Error... entry point is NULL.\n");

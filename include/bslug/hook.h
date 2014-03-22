@@ -1,4 +1,4 @@
-/* search.h
+/* hook.h
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -22,23 +22,13 @@
  * SOFTWARE.
  */
 
-/* This file should ideally avoid Wii specific methods so unit testing can be
- * conducted elsewhere. */
+/* definitions of symbols at which gecko hooks are commonly inserted */
  
-#ifndef SEARCH_H_
-#define SEARCH_H_
+#ifndef _HOOK_H_
+#define _HOOK_H_
 
-#include <stdbool.h>
+#include <stdint.h>
 
-#include "library/event.h"
+extern uint32_t hook_wii_vi[];
 
-extern event_t search_event_complete;
-
-bool Search_Init(void);
-bool Search_RunBackground(void);
-
-bool Search_SymbolAdd(const char *name, void *address);
-bool Search_SymbolReplace(const char *name, void *address);
-void *Search_SymbolLookup(const char *name);
-
-#endif /* SEARCH_H_ */
+#endif /* _HOOK_H_ */

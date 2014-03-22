@@ -40,7 +40,8 @@ typedef struct {
     size_t size;
 } module_metadata_t;
 
-extern event_t module_list_loaded;
+extern event_t module_event_list_loaded;
+extern event_t module_event_complete;
 extern size_t module_list_size;
 extern module_metadata_t **module_list;
 extern size_t module_list_count;

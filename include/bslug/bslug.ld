@@ -5,9 +5,6 @@ SECTIONS {
 	.bslug.load : {
 		*(.bslug.load*)
 	}
-    .bslug.data : {
-        *(.bslug.data*);
-    }
 	.text : {
 		*(.text*)
 	}

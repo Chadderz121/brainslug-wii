@@ -1,9 +1,29 @@
-/* <bslug/bslug.h>
- *  by Alex Chadwick
+/* bslug.h
+ *   by Alex Chadwick
+ * 
+ * Copyright (C) 2014, Alex Chadwick
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
  
-#ifndef BSLUG_BSLUG_H_
-#define BSLUG_BSLUG_H_
+#ifndef BSLUG_H_
+#define BSLUG_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -12,8 +32,7 @@
 
 typedef enum bslug_loader_entry_type_t {
     BSLUG_LOADER_ENTRY_FUNCTION,
-    BSLUG_LOADER_ENTRY_LOAD,
-    BSLUG_LOADER_ENTRY_GLOBAL
+    BSLUG_LOADER_ENTRY_EXPORT
 } bslug_loader_entry_type_t;
 
 typedef struct bslug_loader_entry_t {
@@ -24,13 +43,9 @@ typedef struct bslug_loader_entry_t {
             const void *target;
         } function;
         struct {
-            uint32_t address;
-            const void *data;
-            size_t size;
-        } load;
-        struct {
-            const void *target;
-        } global;
+            const void *name;
+            void *target;
+        } export;
     } data;
 } bslug_loader_entry_t;
 
@@ -46,18 +61,15 @@ typedef struct bslug_loader_entry_t {
             } \
         } \
     }
-
-#define BSLUG_LOAD(load_address, data_symb, data_size) \
-    extern const bslug_loader_entry_t bslug_load_ ## data_symb \
+#define BSLUG_EXPORT(symbol) \
+    extern const bslug_loader_entry_t bslug_export_ ## symbol \
         BSLUG_SECTION("load"); \
-    extern typeof(data_symb) data_symb BSLUG_SECTION("data." #data_symb); \
-    const bslug_loader_entry_t bslug_load_ ## data_symb = { \
-        .type = BSLUG_LOADER_ENTRY_LOAD, \
+    const bslug_loader_entry_t bslug_export_ ## symbol = { \
+        .type = BSLUG_LOADER_ENTRY_EXPORT, \
         .data = { \
-            .load = { \
-                .address = (load_address), \
-                .data = data_symb, \
-                .size = (data_size) \
+            .export = { \
+                .name = #symbol \
+                .target = (symbol) \
             } \
         } \
     }

@@ -112,7 +112,6 @@ static void *Aploader_Main(void *arg) {
     partition_info_t ipc_partition_info[4] ATTRIBUTE_ALIGN(32);
     uint32_t ipc_buffer[8] ATTRIBUTE_ALIGN(32);
     partition_info_t *boot_partition;
-    tmd *dvd_tmd;
     apploader_init_t fn_init;
     apploader_main_t fn_main;
     apploader_final_t fn_final;
@@ -161,12 +160,16 @@ static void *Aploader_Main(void *arg) {
     
 #if 0
     /* debugging code */
-    dvd_tmd = SIGNATURE_PAYLOAD(apploader_ipc_tmd);
-    
-    printf(
-        "Title ID: %08x-%.4s\nIOS: %08x-IOS%d\n",
-        (int)(dvd_tmd->title_id >> 32), (char *)&dvd_tmd->title_id + 4,
-        (int)(dvd_tmd->sys_version >> 32), (int)dvd_tmd->sys_version);
+    {
+        tmd *dvd_tmd;
+        
+        dvd_tmd = SIGNATURE_PAYLOAD(apploader_ipc_tmd);
+        
+        printf(
+            "Title ID: %08x-%.4s\nIOS: %08x-IOS%d\n",
+            (int)(dvd_tmd->title_id >> 32), (char *)&dvd_tmd->title_id + 4,
+            (int)(dvd_tmd->sys_version >> 32), (int)dvd_tmd->sys_version);
+    }
 #endif
     
     do {
@@ -185,7 +188,7 @@ static void *Aploader_Main(void *arg) {
     
     settime(secs_to_ticks(time(NULL) - 946684800));
 
-    Event_Wait(&module_list_loaded);
+    Event_Wait(&module_event_list_loaded);
     
     while (1) {
         void* destination = 0;

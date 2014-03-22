@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Symbols at which a hook can be applied -->
 <symbols>
-    <symbol name="vi_wii_hook" size="0x4" offset="-0x38">
+    <symbol name="hook_wii_vi" size="0x4" offset="-0x38">
         <data>
             7CE33B78 38870034 38A70038 38C7004C
         </data>

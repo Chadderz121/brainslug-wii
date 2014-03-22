@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols relating to the cache -->
+<symbols>
+    <symbol name="DCFlushRange" size="0x30" offset="0x1c" >
+        <data>
+            7c0018ac 38630020 4200fff8 44000002
+        </data>
+    </symbol>
+    <symbol name="ICInvalidateRange" size="0x34" offset="0x1c" >
+        <data>
+            7c001fac 38630020
+        </data>
+    </symbol>
+</symbols>

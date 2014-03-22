@@ -42,7 +42,7 @@
 #include "main.h"
 #include "threads.h"
 
-event_t search_event_completed;
+event_t search_event_complete;
 
 static fsm_t *search_fsm = NULL;
 
@@ -57,7 +57,7 @@ static bool Search_BuildFSM(void);
 static void Search_SymbolMatch(symbol_index_t symbol, const uint8_t *addr);
 
 bool Search_Init(void) {
-    return Event_Init(&search_event_completed);
+    return Event_Init(&search_event_complete);
 }
 
 bool Search_RunBackground(void) {
@@ -99,7 +99,7 @@ static void *Search_Main(void *arg) {
     }
     
 exit_error:
-    Event_Trigger(&search_event_completed);
+    Event_Trigger(&search_event_complete);
     return NULL;
 }
 
