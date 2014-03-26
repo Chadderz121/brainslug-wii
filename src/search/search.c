@@ -32,6 +32,7 @@
 #include <ogc/lwp.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "apploader/apploader.h"
@@ -42,11 +43,32 @@
 #include "main.h"
 #include "threads.h"
 
+typedef struct {
+    void *address;
+    bool search_fail;
+} search_symbol_global_t;
+typedef struct {
+    void *address;
+    const char *name;
+} search_module_symbol_t;
+
+search_symbol_global_t *search_symbol_globals;
+
+#define SEARCH_MODULE_SYMBOLS_CAPACITY_DEFAULT 128
+
+search_module_symbol_t *search_module_symbols;
+
+size_t search_module_symbols_count = 0;
+size_t search_module_symbols_capacity = 0;
+size_t search_module_symbols_sorted = 0;
+
 event_t search_event_complete;
 
 static fsm_t *search_fsm = NULL;
 
 static const char search_path[] = "sd:/bslug/symbols";
+
+static void *search_symbol__start;
 
 static void *Search_Main(void *arg);
 static void Search_SymbolsLoad(void);
@@ -54,7 +76,8 @@ static void Search_CheckDirectory(char *path);
 static void Search_CheckFile(const char *path);
 static void Search_Load(const char *path);
 static bool Search_BuildFSM(void);
-static void Search_SymbolMatch(symbol_index_t symbol, const uint8_t *addr);
+static void Search_SymbolMatch(symbol_index_t symbol, uint8_t *addr);
+static int Search_ModuleSymbolCompare(const void *left, const void *right);
 
 bool Search_Init(void) {
     return Event_Init(&search_event_complete);
@@ -80,10 +103,20 @@ static void *Search_Main(void *arg) {
     Search_SymbolsLoad();
     
     if (symbol_count > 0) {
+        symbol_index_t i;
+        
         if (!Search_BuildFSM())
            goto exit_error;
         
         assert(search_fsm != NULL);
+        
+        search_symbol_globals =
+            malloc(symbol_count * sizeof(*search_symbol_globals));
+        
+        for (i = 0; i < symbol_count; i++) {
+            search_symbol_globals[i].address = NULL;
+            search_symbol_globals[i].search_fail = false;
+        }
         
         Event_Wait(&apploader_event_complete);
         
@@ -98,8 +131,10 @@ static void *Search_Main(void *arg) {
         }
     }
     
-exit_error:
     Event_Trigger(&search_event_complete);
+    return NULL;
+exit_error:
+    printf("Search_Main: exit_error\n");
     return NULL;
 }
 
@@ -259,15 +294,148 @@ exit_error:
     return result;
 }
 
-static void Search_SymbolMatch(symbol_index_t symbol, const uint8_t *addr) {
+static void Search_SymbolMatch(symbol_index_t symbol, uint8_t *addr) {
     symbol_t *symbol_data;
     
     symbol_data = Symbol_GetSymbol(symbol);
     if (symbol_data == NULL)
         return;
     
-    if (symbol_data->name != NULL)
-        printf("Symbol %s found at %p\n", symbol_data->name, addr);
-    else
-        printf("Symbol %u found at %p\n", symbol, addr);
+    if (search_symbol_globals[symbol].address == NULL) {
+        search_symbol_globals[symbol].address = addr;
+    } else {
+        search_symbol_globals[symbol].search_fail = true;
+    }
+}
+
+bool Search_SymbolAdd(const char *name, void *address) {
+    size_t index;
+    
+    assert(name != NULL);
+    
+    if (search_module_symbols_count == search_module_symbols_capacity) {
+        assert(search_module_symbols == NULL);
+        
+        search_module_symbols =
+            malloc(sizeof(*search_module_symbols) *
+            SEARCH_MODULE_SYMBOLS_CAPACITY_DEFAULT);
+        if (search_module_symbols == NULL)
+            return false;
+        
+        search_module_symbols_capacity = SEARCH_MODULE_SYMBOLS_CAPACITY_DEFAULT;
+    } else {
+        assert(search_module_symbols != NULL);
+        void *alloc;
+        
+        alloc = realloc(
+            search_module_symbols,
+            sizeof(*search_module_symbols) * 2 *
+            search_module_symbols_capacity);
+        if (alloc == NULL)
+            return false;
+        
+        search_module_symbols = alloc;
+        search_module_symbols_capacity *= 2;
+    }
+    
+    assert(search_module_symbols != NULL);
+    assert(search_module_symbols_count < search_module_symbols_capacity);
+    
+    index = search_module_symbols_count++;
+    
+    search_module_symbols[index].address = address;
+    search_module_symbols[index].name = strdup(name);
+    if (search_module_symbols[index].name == NULL) {
+        search_module_symbols_count--;
+        return false;
+    }
+    
+    return true;
+}
+bool Search_SymbolReplace(const char *name, void *address) {
+    symbol_alphabetical_index_t symbol;
+    
+    assert(name != NULL);
+    
+    if (strcmp(name, "_start") == 0) {
+        search_symbol__start = address;
+        return true;
+    }
+    
+    symbol = Symbol_SearchSymbol(name);
+    
+    if (symbol == SYMBOL_NULL)
+        return false;
+    
+    search_symbol_globals[symbol].address = address;
+    
+    return true;
+}
+void *Search_SymbolLookup(const char *name) {
+    symbol_alphabetical_index_t symbol_global;
+    search_module_symbol_t *symbol_module, key_module;
+    void *result;
+    
+    assert(name != NULL);
+    
+    if (search_module_symbols_sorted != search_module_symbols_count) {
+        qsort(
+            search_module_symbols, search_module_symbols_count,
+            sizeof(*search_module_symbols), &Search_ModuleSymbolCompare);
+        search_module_symbols_sorted = search_module_symbols_count;
+    }
+    assert(search_module_symbols_sorted == search_module_symbols_count);
+    
+    key_module.name = name;
+    
+    symbol_module = bsearch(
+        &key_module, search_module_symbols, search_module_symbols_count,
+            sizeof(*search_module_symbols), &Search_ModuleSymbolCompare);
+            
+    if (symbol_module != NULL)
+        return symbol_module->address;
+    
+    if (strcmp(name, "_start") == 0) {
+        if (search_symbol__start != NULL)
+            return search_symbol__start;
+        return apploader_game_entry_fn;
+    }
+    
+    result = NULL;
+    
+    /* The symbol search could in theory have multiple versions of a symbol,
+     * for example if there are multiple versions of a method in the wild from
+     * different versions of the library. Therefore, we can't just check the
+     * value at Symbol_SearchSymbol, we must check the ones after it
+     * sequentially too. If we have two symbols with the same name at different
+     * addresses, we return NULL. */
+    for (symbol_global = Symbol_SearchSymbol(name);
+         symbol_global != SYMBOL_NULL && symbol_global < symbol_count;
+         symbol_global++) {
+         
+        symbol_t *symbol = Symbol_GetSymbolAlphabetical(symbol_global);
+        
+        if (strcmp(symbol->name, name) != 0)
+            break;
+        
+        if (search_symbol_globals[symbol->index].address != NULL &&
+            search_symbol_globals[symbol->index].search_fail == false) {
+            
+            /* Duplicated symbol! */
+            if (result != NULL &&
+                result != search_symbol_globals[symbol->index].address)
+                
+                return NULL;
+            
+            result = search_symbol_globals[symbol->index].address;
+        }
+    }
+    
+    return result;
+}
+
+static int Search_ModuleSymbolCompare(const void *left, const void *right) {
+    return strcmp(
+        ((const search_module_symbol_t *)left)->name,
+        ((const search_module_symbol_t *)right)->name);
 }

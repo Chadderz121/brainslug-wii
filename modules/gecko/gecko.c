@@ -350,5 +350,6 @@ static void _start_gecko(void) {
     
     *hook_wii_vi =
         0x48000000 + ((0x800018A8 - (uint32_t)hook_wii_vi) & 0x3fffffc);
-    DCFlushRange(hook_wii_vi, 4);
+    DCFlushRange((void *)((uint32_t)hook_wii_vi & ~0x1f), 32);
+    _start();
 }

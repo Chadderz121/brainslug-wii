@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the standard string.h header -->
+<symbols>
+    <symbol name="memcpy" size="0x50" offset="0x4" >
+        <data>
+            41800028 3884FFFF
+        </data>
+    </symbol>
+</symbols>

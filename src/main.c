@@ -158,8 +158,6 @@ int main(void) {
         fprintf(stderr, "Error... entry point is NULL.\n");
     } else {
         printf("\nPress RESET to launch game.\n");
-        ret = 0;
-        goto exit;
         
         while (!SYS_ResetButtonDown())
             VIDEO_WaitVSync();

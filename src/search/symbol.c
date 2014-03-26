@@ -39,7 +39,7 @@
 typedef struct {
     const char *name;
     symbol_index_t index;
-} symbol_alphabetical_index_t;
+} symbol_alphabetical_index_entry_t;
 
 const struct {
     unsigned char relocation;
@@ -70,7 +70,7 @@ static symbol_t *symbol_globals = NULL;
 static symbol_t *symbol_globals_end = NULL;
 static symbol_t *symbol_globals_free = NULL;
 
-static symbol_alphabetical_index_t *symbol_alphabetical_index = NULL;
+static symbol_alphabetical_index_entry_t *symbol_alphabetical_index = NULL;
 
 static symbol_t *Symbol_AllocSymbol(const char *name, size_t name_length);
 static symbol_relocation_t *Symbol_AddRelocation(
@@ -227,8 +227,6 @@ bool Symbol_ParseFile(FILE *file) {
                 }
                 xml_value = xml_value->next;
             }
-            
-            symbol->offset += data_size / 2;
         } else {
             symbol->data = data = NULL;
             symbol->mask = mask = NULL;
@@ -286,6 +284,8 @@ next_reloc:
             xml_reloc = mxmlFindElement(
                 xml_reloc, xml_symbol, "reloc", NULL, NULL, MXML_NO_DESCEND);
         }
+            
+        symbol->offset += symbol->data_size;
 
 next_symbol:
         xml_symbol = mxmlFindElement(
@@ -377,10 +377,10 @@ static symbol_relocation_t *Symbol_AddRelocation(
 }
 
 static int Symbol_Compare(const void *left_ptr, const void *right_ptr) {
-    const symbol_alphabetical_index_t *left, *right;
+    const symbol_alphabetical_index_entry_t *left, *right;
     
-    left = (const symbol_alphabetical_index_t *)left_ptr;
-    right = (const symbol_alphabetical_index_t *)right_ptr;
+    left = (const symbol_alphabetical_index_entry_t *)left_ptr;
+    right = (const symbol_alphabetical_index_entry_t *)right_ptr;
     
     if (left->name == NULL && right->name == NULL)
         return 0;
@@ -392,8 +392,8 @@ static int Symbol_Compare(const void *left_ptr, const void *right_ptr) {
         return strcmp(left->name, right->name);
 }
 
-symbol_index_t Symbol_SearchSymbol(const char *name) {
-    symbol_alphabetical_index_t ref, *index_ptr;
+symbol_alphabetical_index_t Symbol_SearchSymbol(const char *name) {
+    symbol_alphabetical_index_entry_t ref, *index_ptr;
     
     assert(name != NULL);
     
@@ -404,7 +404,7 @@ symbol_index_t Symbol_SearchSymbol(const char *name) {
         symbol_index_t i;
         
         symbol_alphabetical_index =
-            malloc(sizeof(symbol_alphabetical_index_t) * symbol_count);
+            malloc(sizeof(symbol_alphabetical_index_entry_t) * symbol_count);
         
         /* I suppose we could do a linear search here... */
         if (symbol_alphabetical_index == NULL)
@@ -417,7 +417,7 @@ symbol_index_t Symbol_SearchSymbol(const char *name) {
             
         qsort(
             symbol_alphabetical_index, symbol_count,
-            sizeof(symbol_alphabetical_index_t), &Symbol_Compare);
+            sizeof(symbol_alphabetical_index_entry_t), &Symbol_Compare);
     }
     
     assert(symbol_alphabetical_index != NULL);
@@ -426,7 +426,7 @@ symbol_index_t Symbol_SearchSymbol(const char *name) {
     
     index_ptr = bsearch(
         &ref, symbol_alphabetical_index, symbol_count,
-        sizeof(symbol_alphabetical_index_t), &Symbol_Compare);
+        sizeof(symbol_alphabetical_index_entry_t), &Symbol_Compare);
     
     if (index_ptr == NULL)
         return SYMBOL_NULL;
@@ -434,12 +434,19 @@ symbol_index_t Symbol_SearchSymbol(const char *name) {
         symbol_index_t index;
         
         assert(strcmp(index_ptr->name, name) == 0);
-        index = index_ptr->index;
+        index = index_ptr - symbol_alphabetical_index;
         
         while (index > 0 &&
-               strcmp(Symbol_GetSymbol(index - 1)->name, name) == 0)
+               strcmp(symbol_alphabetical_index[index - 1].name, name) == 0)
             index--;
             
         return index;
     }
+}
+
+symbol_t *Symbol_GetSymbolAlphabetical(symbol_alphabetical_index_t index) {
+    assert(symbol_globals != NULL);
+    assert(symbol_alphabetical_index != NULL);
+    
+    return &symbol_globals[symbol_alphabetical_index[index].index];
 }

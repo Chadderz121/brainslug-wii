@@ -36,13 +36,13 @@
 typedef struct fsm_t fsm_t;
 
 /* function to run on a symbol match. */
-typedef void (*fsm_match_t)(symbol_index_t symbol, const uint8_t *addr);
+typedef void (*fsm_match_t)(symbol_index_t symbol, uint8_t *addr);
 
 fsm_t *FSM_Create(symbol_index_t symbol);
 fsm_t *FSM_Merge(const fsm_t *left, const fsm_t *right);
 void FSM_Free(fsm_t *fsm);
 void FSM_Run(
-    const fsm_t *fsm, const uint8_t *data,
+    const fsm_t *fsm, uint8_t *data,
     size_t length, fsm_match_t match_fn);
 
 #endif /* FSM_H_ */

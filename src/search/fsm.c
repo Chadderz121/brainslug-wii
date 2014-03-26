@@ -572,9 +572,8 @@ void FSM_Free(fsm_t *fsm) {
     free(fsm);
 }
 
-
 void FSM_Run(
-        const fsm_t *fsm, const uint8_t *data,
+        const fsm_t *fsm, uint8_t *data,
         size_t length, fsm_match_t match_fn) {
     fsm_node_t *state;
     size_t i;

@@ -322,12 +322,12 @@ int FSMTest_Merge1(void) {
     return fsm3 == NULL;
 }
 
-void FSMTest_SymbolDetect(const symbol_index_t symbol, const uint8_t *address) {
+void FSMTest_SymbolDetect(const symbol_index_t symbol, uint8_t *address) {
     symbol_t *sym;
-    const uint8_t **results;
+    uint8_t **results;
     
     sym = Symbol_GetSymbol(symbol);
-    results = (const uint8_t **)sym->name;
+    results = (uint8_t **)sym->name;
     results[sym->size++] = address;
 }
 

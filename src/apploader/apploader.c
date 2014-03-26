@@ -67,7 +67,8 @@ uint8_t *apploader_app0_end = NULL;
 uint8_t *apploader_app1_start = NULL;
 uint8_t *apploader_app1_end = NULL;
 
-#define APPLOADER_APP1_BOUNDARY ((void *)0x81200000)
+#define APPLOADER_APP0_BOUNDARY ((void *)0x81200000)
+#define APPLOADER_APP1_BOUNDARY ((void *)0x81400000)
 
 static u32 apploader_ipc_tmd[0x4A00 / 4] ATTRIBUTE_ALIGN(32);
 
@@ -197,11 +198,8 @@ static void *Aploader_Main(void *arg) {
         ret = fn_main(&destination, &length, &offset);
         if (!ret)
             break;
-
-        if (destination >= (void *)(0x81800000 - module_list_size))
-            destination = (char *)destination - module_list_size;
         
-        if (destination < APPLOADER_APP1_BOUNDARY) {
+        if (destination < APPLOADER_APP0_BOUNDARY) {
             uint8_t *range_start, *range_end;
 
             range_start = destination;
@@ -217,9 +215,11 @@ static void *Aploader_Main(void *arg) {
                 
                 apploader_app0_end = range_end;
             }
-        } else {
+        } else if (destination > APPLOADER_APP1_BOUNDARY) {
             uint8_t *range_start, *range_end;
-
+            
+            destination = (char *)destination - module_list_size;
+            
             range_start = destination;
             range_end = range_start + length;
             

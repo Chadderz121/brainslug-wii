@@ -108,8 +108,8 @@ int SymbolTest_Parse2(void) {
     if (strcmp(symbol->name, "IOS_Ioctl") != 0)
         return 105;
     if (symbol->size != 0x130)
-        return 106;
-    if (symbol->offset != 4)
+        return 106;;
+    if (symbol->offset != 0x4 + 0x8)
         return 107;
     if (symbol->data_size != 8)
         return 108;
@@ -179,7 +179,7 @@ int SymbolTest_Parse3(void) {
         return 105;
     if (symbol->size != 0x130)
         return 106;
-    if (symbol->offset != 4)
+    if (symbol->offset != 0x4 + 0x8)
         return 107;
     if (symbol->data_size != 8)
         return 108;
@@ -234,7 +234,7 @@ int SymbolTest_Parse3(void) {
         return 130;
     if (symbol->size != 0x130)
         return 131;
-    if (symbol->offset != 4)
+    if (symbol->offset != 0x4 + 0x8)
         return 132;
     if (symbol->data_size != 8)
         return 133;
