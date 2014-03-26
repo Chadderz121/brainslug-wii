@@ -79,7 +79,7 @@ typedef struct bslug_loader_entry_t {
     const char bslug_meta_ ## id [] = #id "=" value
 
 #define BSLUG_MODULE_GAME(x)    BSLUG_META(game, x)
-#define BSLUG_MODULE_NAME(x)    BSLUG_META(name, x)
+#define BSLUG_MODULE_NAME(x)    BSLUG_META(name, x); BSLUG_META(bslug, "0.1")
 #define BSLUG_MODULE_AUTHOR(x)  BSLUG_META(author, x)
 #define BSLUG_MODULE_VERSION(x) BSLUG_META(version, x)
 #define BSLUG_MODULE_LICENSE(x) BSLUG_META(license, x)

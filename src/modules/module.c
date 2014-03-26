@@ -515,7 +515,7 @@ static module_metadata_t *Module_MetadataRead(
         const char *path, Elf *elf,
         Elf32_Sym *symtab, size_t symtab_count, size_t symtab_strndx) {
     char *metadata = NULL, *metadata_cur, *metadata_end, *tmp;
-    const char *game, *name, *author, *version, *license;
+    const char *game, *name, *author, *version, *license, *bslug;
     module_metadata_t *ret = NULL;
     Elf_Scn *scn;
     size_t shstrndx;
@@ -608,12 +608,18 @@ static module_metadata_t *Module_MetadataRead(
             if (license != NULL)
                 goto exit_error;
             license = eq + 1;
+        } else if (strncmp(metadata_cur, "bslug", eq - metadata_cur) == 0) {
+            if (bslug != NULL)
+                goto exit_error;
+            bslug = eq + 1;
         } else
             goto exit_error;
     }
     
     if (game == NULL)
         game = "";
+    if (bslug == NULL || strcmp(bslug, "0.1") != 0)
+        goto exit_error;
     if (name == NULL || author == NULL || version == NULL || license == NULL)
         goto exit_error;
     
