@@ -1,4 +1,4 @@
-/* main.h
+/* main.c
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -22,15 +22,12 @@
  * SOFTWARE.
  */
 
-#ifndef MAIN_H_
-#define MAIN_H_
+#include <bslug.h>
 
-#include <bslug_include/version.h>
+/* support any game id */
+BSLUG_MODULE_GAME("????");
+BSLUG_MODULE_NAME("BSlug Module template");
+BSLUG_MODULE_VERSION("v1.0");
+BSLUG_MODULE_AUTHOR("Chadderz");
+BSLUG_MODULE_LICENSE("BSD");
 
-#include "library/event.h"
-
-#define BSLUG_LOADER_VERSION BSLUG_VERSION(0, 1, 0)
-
-extern event_t main_event_fat_loaded;
-
-#endif /* MAIN_H_ */

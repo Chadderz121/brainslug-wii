@@ -10,9 +10,12 @@
 C := ,
 
 ###############################################################################
-# devkitpro and libogc settings
+# devkitpro settings
 ifeq ($(strip $(DEVKITPPC)),)
   $(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>devkitPPC")
+endif
+ifeq ($(strip $(DEVKITPRO)),)
+  $(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>devkitPRO")
 endif
 
 ifeq ($(OS),Windows_NT)
@@ -96,7 +99,7 @@ SRC      :=
 # Phony targets
 PHONY    :=
 # Include directories
-INC_DIRS := include
+INC_DIRS := include .
 # Library directories
 LIB_DIRS := $(DEVKITPPC) $(DEVKITPPC)/powerpc-eabi \
             $(DEVKITPRO)/libogc $(DEVKITPRO)/libogc/lib/wii \
@@ -108,6 +111,28 @@ LIB_DIRS := $(DEVKITPPC) $(DEVKITPPC)/powerpc-eabi \
 PHONY += all
 
 all : $(TARGET) $(BIN)/boot.elf
+
+###############################################################################
+# Install rule
+
+BSLUGDIR := $(DEVKITPRO)/bslug
+
+# Rule to install bslug.
+PHONY += install
+install : bslug_include modules symbols bslug.ld  bslug_elf.ld
+	$(LOG)
+	-$Qmkdir $(BSLUGDIR)
+	$Qcp -r bslug_include $(BSLUGDIR)/include
+	$Qcp -r modules $(BSLUGDIR)
+	$Qcp -r symbols $(BSLUGDIR)
+	$Qcp -r bslug.ld $(BSLUGDIR)
+	$Qcp -r bslug_elf.ld $(BSLUGDIR)
+
+# Rule to install bslug.
+PHONY += uninstall
+uninstall : 
+	$(LOG)
+	-$Qrm -rf $(BSLUGDIR)
 
 ###############################################################################
 # Recursive rules

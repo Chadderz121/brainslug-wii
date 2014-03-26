@@ -25,7 +25,7 @@
 #include "module.h"
 
 #include <assert.h>
-#include <bslug/bslug.h>
+#include <bslug_include/bslug.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -572,6 +572,7 @@ static module_metadata_t *Module_MetadataRead(
     author = NULL;
     version = NULL;
     license = NULL;
+    bslug = NULL;
     
     for (metadata_cur = metadata;
          metadata_cur < metadata_end;
