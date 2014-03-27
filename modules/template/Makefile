@@ -20,6 +20,7 @@ BSLUGDIR := $(DEVKITPRO)/bslug
 
 PATH := $(DEVKITPPC)/bin:$(PATH)
 LIB_INC_DIRS := $(DEVKITPPC)/lib/gcc/powerpc-eabi/4.6.3/include \
+                $(DEVKITPPC)/lib/gcc/powerpc-eabi/4.6.3/include-fixed \
                 $(BSLUGDIR)/include
 
 include makefile.mk

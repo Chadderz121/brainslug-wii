@@ -34,6 +34,30 @@
 #define NULL 0
 #endif
 
-void *memcpy(void *destination, const void *source, size_t num);
+void *memcpy(void *dst, const void *src, size_t num);
+void *memchr(const void *ptr, int value, size_t num); 
+void *memrchr(const void *ptr, int value, size_t num); 
+int memcmp(const void *ptr1, const void *ptr2, size_t num);
+void *memmove(void *dst, const void *src, size_t num);
+void *memset(void *ptr, int value, size_t num);
+char *strcpy(char *dst, const char *src);
+char *strncpy(char *dst, const char *src, size_t maxlen);
+char *strcat(char *dst, const char *src);
+char *strchr(const char *str, int character);
+int strcmp (const char *str1, const char *str2);
+size_t strlen(const char *s);
+int strncmp (const char *str1, const char *str2, size_t maxlen);
+size_t strnlen(const char *s, size_t maxlen);
+
+static inline char *strrchr(const char *str, int character) {
+    return memrchr(str, character, strlen(str));
+}
+static inline char *strpbrk(const char *str, const char *set) {
+    char *result = (char *)str;
+    for (; result[0] != '\0'; result++)
+        if (strchr(set, result[0]) != NULL)
+            return result;
+    return NULL;
+}
 
 #endif /* _STRING_H_ */

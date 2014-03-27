@@ -304,7 +304,20 @@ static void Search_SymbolMatch(symbol_index_t symbol, uint8_t *addr) {
     if (search_symbol_globals[symbol].address == NULL) {
         search_symbol_globals[symbol].address = addr;
     } else {
-        search_symbol_globals[symbol].search_fail = true;
+        /* rarely, a symbol is included twice (ex strlen in RMCP). Prevent this
+         * causing problems if there are no relocations. */
+        if (symbol_data->mask != NULL &&
+            symbol_data->data_size == symbol_data->size) {
+            
+            size_t i;
+            
+            for (i = 0; i < symbol_data->data_size; i++)
+                if (symbol_data->mask[i] != 0xff) {
+                    search_symbol_globals[symbol].search_fail = true;
+                    break;
+                }
+        } else
+            search_symbol_globals[symbol].search_fail = true;
     }
 }
 

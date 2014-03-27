@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the rvl/OSThread.h header -->
+<symbols>
+    <symbol name="OSGetCurrentThread" size="0xc" offset="0x0" >
+        <data>
+            3C608000 806300E4
+        </data>
+    </symbol>
+</symbols>

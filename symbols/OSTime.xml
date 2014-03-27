@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the rvl/OSTime.h header -->
+<symbols>
+    <symbol name="OSGetTime" size="0x18" offset="0x0" >
+        <data>
+            7C6D42E6 7C8C42E6
+        </data>
+    </symbol>
+    <symbol name="OSGetTick" size="0x8" offset="0x0" >
+        <data>
+            7C6C42E6 4E800020
+        </data>
+    </symbol>
+    <symbol name="OSTicksToCalendarTime" size="0x1c8" offset="0x68" >
+        <data>
+            3C80431C 57E31838
+        </data>
+    </symbol>
+</symbols>

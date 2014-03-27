@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the standard ctype.h header -->
+<symbols>
+    <symbol name="tolower" size="0x38" offset="0x0" >
+        <data>
+            2C030000 38000000 4180000C
+        </data>
+    </symbol>
+</symbols>

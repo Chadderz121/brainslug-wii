@@ -6,4 +6,72 @@
             41800028 3884FFFF
         </data>
     </symbol>
+    <symbol name="memchr" size="0x2c" offset="0x0" >
+        <data>
+            5484063E 3863FFFF 38A50001
+        </data>
+    </symbol>
+    <symbol name="memrchr" size="0x2c" offset="0x0" >
+        <data>
+            7C632A14 5484063E 38A50001
+        </data>
+    </symbol>
+    <symbol name="memcmp" size="0x4c" offset="0x0" >
+        <data>
+            38E4FFFF 38C3FFFF 38850001
+        </data>
+    </symbol>
+    <symbol name="memcpy" size="0xcc" offset="0x0" >
+        <data>
+            9421FFF0 7C0802A6 7C662278
+        </data>
+    </symbol>
+    <!-- I'm unhappy about this symbol 4bffff39 is a branch! That said in
+         practice it only occurs once per file in the .init section. -->
+    <symbol name="memset" size="0x30" offset="0xc" >
+        <data>
+            93e1000c 7C7F1B78 4BFFFF39 7FE3FB78
+        </data>
+    </symbol>
+    <symbol name="strcpy" size="0xc0" offset="0x0" >
+        <data>
+            546007BE 548507BE 7C002840
+        </data>
+    </symbol>
+    <symbol name="strncpy" size="0x44" offset="0x0" >
+        <data>
+            3884FFFF 38C3FFFF 38A50001 4800002C
+        </data>
+    </symbol>
+    <symbol name="strcat" size="0x2c" offset="0x0" >
+        <data>
+            3884FFFF 38A3FFFF 8C050001
+        </data>
+    </symbol>
+    <symbol name="strchr" size="0x30" offset="0x0" >
+        <data>
+            3863FFFF 5480063E
+        </data>
+    </symbol>
+    <symbol name="strcmp" size="0x11c" offset="0x10" >
+        <data>
+            7C030378 4E800020 548007BE
+        </data>
+    </symbol>
+    <symbol name="strlen" size="0x1c" offset="0x0" >
+        <data>
+            3883FFFF 3860FFFF 8C040001 38630001
+            2C000000 4082FFF4 4E800020
+        </data>
+    </symbol>
+    <symbol name="strncmp" size="0x40" offset="0x10" >
+        <data>
+            3863FFFF 3884FFFF 38C50001
+        </data>
+    </symbol>
+    <symbol name="strnlen" size="0x2c" offset="0x0" >
+        <data>
+            7C651B78 48000008
+        </data>
+    </symbol>
 </symbols>
