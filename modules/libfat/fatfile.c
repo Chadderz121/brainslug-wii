@@ -46,9 +46,7 @@
 #include "filetime.h"
 #include "lock.h"
 
-bool _FAT_findEntry(const char *path, DIR_ENTRY *dirEntry) {
-	PARTITION *partition = _FAT_partition_getPartitionFromPath(path);
-
+bool _FAT_findEntry(PARTITION *partition, const char *path, DIR_ENTRY *dirEntry) {
 	// Move the path pointer to the start of the actual path
 	if (strchr (path, ':') != NULL) {
 		path = strchr (path, ':') + 1;
@@ -62,22 +60,18 @@ bool _FAT_findEntry(const char *path, DIR_ENTRY *dirEntry) {
 	
 }
 
-int	FAT_getAttr(const char *file) {
+int	FAT_getAttr(PARTITION *partition, const char *file) {
 	DIR_ENTRY dirEntry;
 	if (!_FAT_findEntry(file,&dirEntry)) return -1;
 	 
 	return dirEntry.entryData[DIR_ENTRY_attributes];
 }
 
-int FAT_setAttr(const char *file, int attr) {
+int FAT_setAttr(PARTITION *partition, const char *file, int attr) {
 
 	// Defines...
 	DIR_ENTRY_POSITION entryEnd;
-	PARTITION *partition = NULL;
 	DIR_ENTRY* dirEntry = NULL;
-
-	// Get Partition
-	partition = _FAT_partition_getPartitionFromPath( file );
 
 	// Check Partition
 	if( !partition )
@@ -122,14 +116,12 @@ int FAT_setAttr(const char *file, int attr) {
 }
 
 
-int _FAT_open_r (struct _reent *r, void *fileStruct, const char *path, int flags, int mode) {
-	PARTITION* partition = NULL;
+int _FAT_open_r (struct _reent *r, void *fileStruct, PARTITION *partition, const char *path, int flags, int mode) {
 	bool fileExists;
 	DIR_ENTRY dirEntry;
 	const char* pathEnd;
 	uint32_t dirCluster;
 	FILE_STRUCT* file = (FILE_STRUCT*) fileStruct;
-	partition = _FAT_partition_getPartitionFromPath (path);
 
 	if (partition == NULL) {
 		r->_errno = ENODEV;

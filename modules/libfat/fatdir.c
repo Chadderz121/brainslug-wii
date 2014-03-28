@@ -46,12 +46,9 @@
 #include "lock.h"
 
 
-int _FAT_stat_r (struct _reent *r, const char *path, struct stat *st) {
-	PARTITION* partition = NULL;
+int _FAT_stat_r (struct _reent *r, PARTITION *partition, const char *path, struct stat *st) {
 	DIR_ENTRY dirEntry;
 
-	// Get the partition this file is on
-	partition = _FAT_partition_getPartitionFromPath (path);
 	if (partition == NULL) {
 		r->_errno = ENODEV;
 		return -1;
@@ -82,21 +79,18 @@ int _FAT_stat_r (struct _reent *r, const char *path, struct stat *st) {
 	return 0;
 }
 
-int _FAT_link_r (struct _reent *r, const char *existing, const char *newLink) {
+int _FAT_link_r (struct _reent *r, PARTITION *partition, const char *existing, const char *newLink) {
 	r->_errno = ENOTSUP;
 	return -1;
 }
 
-int _FAT_unlink_r (struct _reent *r, const char *path) {
-	PARTITION* partition = NULL;
+int _FAT_unlink_r (struct _reent *r, PARTITION *partition, const char *path) {
 	DIR_ENTRY dirEntry;
 	DIR_ENTRY dirContents;
 	uint32_t cluster;
 	bool nextEntry;
 	bool errorOccured = false;
 
-	// Get the partition this directory is on
-	partition = _FAT_partition_getPartitionFromPath (path);
 	if (partition == NULL) {
 		r->_errno = ENODEV;
 		return -1;
@@ -172,11 +166,8 @@ int _FAT_unlink_r (struct _reent *r, const char *path) {
 	}
 }
 
-int _FAT_chdir_r (struct _reent *r, const char *path) {
-	PARTITION* partition = NULL;
+int _FAT_chdir_r (struct _reent *r, PARTITION *partition, const char *path) {
 
-	// Get the partition this directory is on
-	partition = _FAT_partition_getPartitionFromPath (path);
 	if (partition == NULL) {
 		r->_errno = ENODEV;
 		return -1;
@@ -206,28 +197,18 @@ int _FAT_chdir_r (struct _reent *r, const char *path) {
 	}
 }
 
-int _FAT_rename_r (struct _reent *r, const char *oldName, const char *newName) {
-	PARTITION* partition = NULL;
+int _FAT_rename_r (struct _reent *r, PARTITION *partition, const char *oldName, const char *newName) {
 	DIR_ENTRY oldDirEntry;
 	DIR_ENTRY newDirEntry;
 	const char *pathEnd;
 	uint32_t dirCluster;
-
-	// Get the partition this directory is on
-	partition = _FAT_partition_getPartitionFromPath (oldName);
+    
 	if (partition == NULL) {
 		r->_errno = ENODEV;
 		return -1;
 	}
 
 	_FAT_lock(&partition->lock);
-
-	// Make sure the same partition is used for the old and new names
-	if (partition != _FAT_partition_getPartitionFromPath (newName)) {
-		_FAT_unlock(&partition->lock);
-		r->_errno = EXDEV;
-		return -1;
-	}
 
 	// Make sure we aren't trying to write to a read-only disc
 	if (partition->readOnly) {
@@ -320,15 +301,13 @@ int _FAT_rename_r (struct _reent *r, const char *oldName, const char *newName) {
 	return 0;
 }
 
-int _FAT_mkdir_r (struct _reent *r, const char *path, int mode) {
-	PARTITION* partition = NULL;
+int _FAT_mkdir_r (struct _reent *r, PARTITION *partition, const char *path, int mode) {
 	bool fileExists;
 	DIR_ENTRY dirEntry;
 	const char* pathEnd;
 	uint32_t parentCluster, dirCluster;
 	uint8_t newEntryData[DIR_ENTRY_DATA_SIZE];
 
-	partition = _FAT_partition_getPartitionFromPath (path);
 	if (partition == NULL) {
 		r->_errno = ENODEV;
 		return -1;
@@ -452,13 +431,10 @@ int _FAT_mkdir_r (struct _reent *r, const char *path, int mode) {
 	return 0;
 }
 
-int _FAT_statvfs_r (struct _reent *r, const char *path, struct statvfs *buf)
+int _FAT_statvfs_r (struct _reent *r, PARTITION *partition, const char *path, struct statvfs *buf)
 {
-	PARTITION* partition = NULL;
 	unsigned int freeClusterCount;
 
-	// Get the partition of the requested path
-	partition = _FAT_partition_getPartitionFromPath (path);
 	if (partition == NULL) {
 		r->_errno = ENODEV;
 		return -1;
@@ -503,11 +479,11 @@ int _FAT_statvfs_r (struct _reent *r, const char *path, struct statvfs *buf)
 	return 0;
 }
 
-DIR_STATE_STRUCT* _FAT_diropen_r(struct _reent *r, DIR_STATE_STRUCT *state, const char *path) {
+DIR_STATE_STRUCT* _FAT_diropen_r(struct _reent *r, DIR_STATE_STRUCT *state, PARTITION *partition, const char *path) {
 	DIR_ENTRY dirEntry;
 	bool fileExists;
 
-	state->partition = _FAT_partition_getPartitionFromPath (path);
+	state->partition = partition;
 	if (state->partition == NULL) {
 		r->_errno = ENODEV;
 		return NULL;

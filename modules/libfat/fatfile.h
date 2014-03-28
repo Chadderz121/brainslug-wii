@@ -70,7 +70,7 @@ struct _FILE_STRUCT {
 
 typedef struct _FILE_STRUCT FILE_STRUCT;
 
-int _FAT_open_r (struct _reent *r, void *fileStruct, const char *path, int flags, int mode);
+int _FAT_open_r (struct _reent *r, void *fileStruct, PARTITION *partition, const char *path, int flags, int mode);
 
 int _FAT_close_r (struct _reent *r, int fd);
 

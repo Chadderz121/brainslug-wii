@@ -2,9 +2,10 @@
 	fat.h
 	Simple functionality for startup, mounting and unmounting of FAT-based devices.
 	
- Copyright (c) 2006 - 2012
+ Copyright (c) 2006 - 2014
 	Michael "Chishm" Chisholm
 	Dave "WinterMute" Murphy
+    Alex "Chadderz" Chadwick
 
  Redistribution and use in source and binary forms, with or without modification,
  are permitted provided that the following conditions are met:
@@ -39,6 +40,10 @@ extern "C" {
 #include "libfatversion.h"
 
 #include <io/disc_io.h>
+
+struct PARTITION_t;
+
+typedef struct PARTITION_t PARTITION;
 
 /*
 Initialise any inserted block-devices.
@@ -93,8 +98,8 @@ extern void fatGetVolumeLabel (const char* name, char *label);
 /*
 Methods to modify DOS File Attributes
 */
-int	FAT_getAttr(const char *file);
-int	FAT_setAttr(const char *file, int attr );
+int	FAT_getAttr(PARTITION *partition, const char *file);
+int	FAT_setAttr(PARTITION *partition, const char *file, int attr );
 
 #define LIBFAT_FEOS_MULTICWD
 

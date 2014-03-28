@@ -28,6 +28,16 @@
 #ifndef _STRING_H_
 #define _STRING_H_
 
+/* Functions not provided in this file:
+ *  - strncat
+ *  - strcoll
+ *  - strcspn
+ *  - strerror
+ */
+/* Nontstandard functions provided in this file:
+ * - memrchr
+ */
+
 #include <stddef.h>
 
 #ifndef NULL
