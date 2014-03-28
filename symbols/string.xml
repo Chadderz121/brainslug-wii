@@ -21,7 +21,7 @@
             38E4FFFF 38C3FFFF 38850001
         </data>
     </symbol>
-    <symbol name="memcpy" size="0xcc" offset="0x0" >
+    <symbol name="memmove" size="0xcc" offset="0x0" >
         <data>
             9421FFF0 7C0802A6 7C662278
         </data>

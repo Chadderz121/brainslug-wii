@@ -1191,8 +1191,10 @@ static bool Module_ListLoadSymbols(uint8_t **space) {
             assert(entry->data.function.name != NULL);
             data = Search_SymbolLookup(entry->data.function.name);
             
-            if (data == NULL)
+            if (data == NULL) {
+                printf("Missing symbol %s\n", entry->data.function.name);
                 goto exit_error;
+            }
             
             switch (*data & 0xfc000002) {
                 case 0x40000000: { /* bc */
@@ -1262,7 +1264,8 @@ static bool Module_ListLoadSymbols(uint8_t **space) {
             DCFlushRange((void *)((uint32_t)data & ~31), 32);
             ICInvalidateRange((void *)((uint32_t)data & ~31), 32);
             
-            Search_SymbolReplace(entry->data.function.name, *space);
+            if (!Search_SymbolReplace(entry->data.function.name, *space))
+                goto exit_error;
         }
     }
     
@@ -1288,8 +1291,10 @@ static bool Module_ListLinkFinal(void) {
         assert(reloc->name != NULL);
         symbol = Search_SymbolLookup(reloc->name);
         
-        if (symbol == NULL)
+        if (symbol == NULL) {
+            printf("Missing symbol %s\n", reloc->name);
             goto exit_error;
+        }
         
         if (!Module_ElfLinkOne(
                 reloc->type, reloc->offset, reloc->addend,

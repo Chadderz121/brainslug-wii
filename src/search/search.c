@@ -366,7 +366,7 @@ bool Search_SymbolAdd(const char *name, void *address) {
     return true;
 }
 bool Search_SymbolReplace(const char *name, void *address) {
-    symbol_alphabetical_index_t symbol;
+    symbol_alphabetical_index_t symbol_global;
     
     assert(name != NULL);
     
@@ -374,14 +374,31 @@ bool Search_SymbolReplace(const char *name, void *address) {
         search_symbol__start = address;
         return true;
     }
-    
-    symbol = Symbol_SearchSymbol(name);
-    
-    if (symbol == SYMBOL_NULL)
+        
+    /* The symbol search could in theory have multiple versions of a symbol,
+     * for example if there are multiple versions of a method in the wild from
+     * different versions of the library. Therefore, we can't just change the
+     * value at Symbol_SearchSymbol, we must check the ones after it
+     * sequentially too. */
+    for (symbol_global = Symbol_SearchSymbol(name);
+         symbol_global != SYMBOL_NULL && symbol_global < symbol_count;
+         symbol_global++) {
+         
+        symbol_t *symbol = Symbol_GetSymbolAlphabetical(symbol_global);
+        
+        if (strcmp(symbol->name, name) != 0)
+            break;
+        
+        if (search_symbol_globals[symbol->index].address != NULL &&
+            search_symbol_globals[symbol->index].search_fail == false) {
+            
+            /* Duplicated symbol! */
+            search_symbol_globals[symbol->index].address = address;
+        }
+    }
+    if (symbol_global == SYMBOL_NULL)
         return false;
-    
-    search_symbol_globals[symbol].address = address;
-    
+        
     return true;
 }
 void *Search_SymbolLookup(const char *name) {
