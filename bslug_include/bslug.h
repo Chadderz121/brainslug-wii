@@ -32,6 +32,7 @@
 
 typedef enum bslug_loader_entry_type_t {
     BSLUG_LOADER_ENTRY_FUNCTION,
+    BSLUG_LOADER_ENTRY_FUNCTION_MANDATORY,
     BSLUG_LOADER_ENTRY_EXPORT
 } bslug_loader_entry_type_t;
 
@@ -54,6 +55,18 @@ typedef struct bslug_loader_entry_t {
         BSLUG_SECTION("load"); \
     const bslug_loader_entry_t bslug_load_ ## original_func = { \
         .type = BSLUG_LOADER_ENTRY_FUNCTION, \
+        .data = { \
+            .function = { \
+                .name = #original_func, \
+                .target = (replace_func) \
+            } \
+        } \
+    }
+#define BSLUG_MUST_REPLACE(original_func, replace_func) \
+    extern const bslug_loader_entry_t bslug_load_ ## original_func \
+        BSLUG_SECTION("load"); \
+    const bslug_loader_entry_t bslug_load_ ## original_func = { \
+        .type = BSLUG_LOADER_ENTRY_FUNCTION_MANDATORY, \
         .data = { \
             .function = { \
                 .name = #original_func, \

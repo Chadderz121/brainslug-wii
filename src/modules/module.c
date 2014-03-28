@@ -1179,21 +1179,40 @@ static bool Module_ListLoadSymbols(uint8_t **space) {
 
         entry = module_entries + i;
         
-        if (entry->type == BSLUG_LOADER_ENTRY_EXPORT) {
+        switch (entry->type) {
+        case BSLUG_LOADER_ENTRY_EXPORT: {
             if (!Search_SymbolAdd(
                 entry->data.export.name,
-                entry->data.export.target));
+                entry->data.export.target))
                 
                 goto exit_error;
-        } else if (entry->type == BSLUG_LOADER_ENTRY_FUNCTION) {
+                
+            break;
+        } case BSLUG_LOADER_ENTRY_FUNCTION:
+        case BSLUG_LOADER_ENTRY_FUNCTION_MANDATORY: {
             uint32_t *data;
             
             assert(entry->data.function.name != NULL);
             data = Search_SymbolLookup(entry->data.function.name);
             
             if (data == NULL) {
-                printf("Missing symbol %s\n", entry->data.function.name);
-                goto exit_error;
+                if (entry->type == BSLUG_LOADER_ENTRY_FUNCTION) {
+                    *space -= 4;
+                    /* FIXME: this behaviour is bad; we should call abort or
+                     * some such.
+                     *
+                     * The hack is, if we're replacing a function, we probably
+                     * reference it. Since the symbol is missing, this won't
+                     * work, so we make up a plausible symbol table entry for
+                     * the purpose of relocation.
+                     */
+                    ((uint32_t *)*space)[0] = 0x48000000; /* spin loop */
+                    Search_SymbolAdd(entry->data.function.name, *space);
+                    continue;
+                } else {
+                    printf("Missing symbol %s\n", entry->data.function.name);
+                    goto exit_error;
+                }
             }
             
             switch (*data & 0xfc000002) {
@@ -1266,6 +1285,9 @@ static bool Module_ListLoadSymbols(uint8_t **space) {
             
             if (!Search_SymbolReplace(entry->data.function.name, *space))
                 goto exit_error;
+            break;
+        } default:
+            goto exit_error;
         }
     }
     
