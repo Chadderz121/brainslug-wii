@@ -28,6 +28,14 @@
 #ifndef _STDIO_H_
 #define _STDIO_H_
 
+/* Functions not provided in this file:
+ *  - vfprintf
+ */
+/* Nontstandard functions provided in this file:
+ * - snprintf
+ * - vsnprintf
+ */
+ 
 #ifndef EOF
 #define	EOF	(-1)
 #endif
@@ -66,6 +74,23 @@ typedef struct file {
     struct FILE *next_file; /* 0x4c */
 } FILE;
 
+#ifdef __GNUC__
+#ifndef __ATTRIBUTE_PRINTF
+#define __ATTRIBUTE_PRINTF(str, args) \
+    __attribute__ ((format (printf, str, args)))
+#endif
+#endif
+
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+
+int fprintf(FILE *stream, const char *format, ...) __ATTRIBUTE_PRINTF(2, 3);
+int printf(const char *format, ...) __ATTRIBUTE_PRINTF(1, 2);
+int sprintf(char *str, const char *format, ...) __ATTRIBUTE_PRINTF(2, 3);
+int snprintf(char *str, size_t len, const char *format, ...)
+    __ATTRIBUTE_PRINTF(3, 4);
+    
+int vprintf(const char *format, va_list arg);
+int vsprintf(char *str, const char *format, va_list arg);
+int vsnprintf(char *str, size_t len, const char *format, va_list arg);
 
 #endif /* _STDIO_H_ */

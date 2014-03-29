@@ -5,5 +5,69 @@
         <data>
             54606FFF 41820010 54603FBE
         </data>
+    </symbol>    
+    <!-- there are at least two versions of printf, one is 4 bytes longer -->
+    <symbol name="printf" size="0xc8" offset="0x80" >
+        <data>
+            38810088 38010008 3CA00100
+        </data>
+    </symbol>
+    <symbol name="fprintf" size="0xc4" offset="0x7c" >
+        <data>
+            38E10088 38010008 3C800200
+        </data>
+    </symbol>
+    <!-- there are at least two versions of vprintf, one is 4 bytes longer -->
+    <symbol name="vprintf" size="0x78" offset="0x20" >
+        <data>
+            3880FFFF 93A10014 7C7D1B78 387F0050
+        </data>
+    </symbol>
+    <!-- there are at least two versions of vsnprintf -->
+    <symbol name="vsnprintf" size="0x84" offset="0x2c" >
+        <data>
+            3867????
+            9081000C 38810008 93E10010 4???????
+            2C1D0000 41820024 7C03F040 4080000C
+        </data>
+    </symbol>
+    <symbol name="vsnprintf" size="0x88" offset="0x2c" >
+        <data>
+            3867???? 38E00000
+            9081000C 38810008 93E10010 4???????
+            2C1D0000 41820024 7C03F040 4080000C
+        </data>
+    </symbol>
+    <!-- there are at least two versions of vsprintf, one is 4 bytes longer -->
+    <symbol name="vsprintf" size="0x80" offset="0x38" >
+        <data>
+            3867????
+            93C1000C 93E10010 4???????
+            2C1D0000 41820018 7C03F040 4080000C
+        </data>
+    </symbol>
+    <symbol name="vsprintf" size="0x84" offset="0x38" >
+        <data>
+            3867???? 38E00000
+            93C1000C 93E10010 4???????
+            2C1D0000 41820018 7C03F040 4080000C
+        </data>
+    </symbol>
+    <!-- there are at least two versions of snprintf -->
+    <symbol name="snprintf" size="0xd8" offset="0x3c" >
+        <data>
+            398100A8 38010008 3FC00300
+        </data>
+    </symbol>
+    <symbol name="snprintf" size="0xf4" offset="0xac" >
+        <data>
+            2C1C0000 41820024 7C03E840
+        </data>
+    </symbol>
+    <!-- there are at least two versions of sprintf, one is 4 bytes longer -->
+    <symbol name="sprintf" size="0xd0" offset="0x38" >
+        <data>
+            398100A8 38010008 3FA00200
+        </data>
     </symbol>
 </symbols>
