@@ -281,10 +281,12 @@ bool Symbol_ParseFile(FILE *file) {
                 mask[offset - symbol->offset + 3] &= relocation_mask[3];
             }
 
-            relocation = Symbol_AddRelocation(
-                symbol, symbol_str, type, offset);
-            if (relocation == NULL)
-                goto exit_error;
+            if (symbol_str != NULL) {
+                relocation = Symbol_AddRelocation(
+                    symbol, symbol_str, type, offset);
+                if (relocation == NULL)
+                    goto exit_error;
+            }
 
 next_reloc:
             xml_reloc = mxmlFindElement(
@@ -367,6 +369,7 @@ static symbol_relocation_t *Symbol_AddRelocation(
     relocation = malloc(sizeof(symbol_relocation_t));
     
     if (relocation != NULL) {
+        assert(target != NULL);
         name_alloc = malloc(strlen(target) + 1);
         if (name_alloc != NULL) {
             strncpy(name_alloc, target, strlen(target) + 1);
