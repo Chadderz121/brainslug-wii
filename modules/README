@@ -4,7 +4,16 @@ patched into a game seamlessly.
 
 For ease, I recommend you base all new BrainSlug modules on the template
 project. The template project has no actual code; but it does compile to a valid
-module. All modules MUST declare the following statements ONCE at top level:
+module. Hopefully you should never have to change the template's Makefile,
+instead there is a makefile.mk which contains parts of the Makefile that you
+would normally want to change. The list of source files to be compiled is in
+this file. You can use multiple source files as normal; just remember to include
+<bslug.h> when using BSLUG_ macros. To build a module simply run `make' in its
+directory. The generated module will appear as a `.mod' file in the `bin'
+subdirectory to delete all generated files run `make clean'. To use the module
+copy it to the `bslug\modules' directory on the SD card.
+
+All modules MUST declare the following statements ONCE at top level:
     BSLUG_MODULE_NAME("BSlug Module template");
     BSLUG_MODULE_VERSION("v1.0");
     BSLUG_MODULE_AUTHOR("Chadderz");

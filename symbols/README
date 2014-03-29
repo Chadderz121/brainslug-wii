@@ -5,6 +5,11 @@ must begin with:
 This is then followed by:
 <symbols>
 
+The <symbols> element can have the attribute debug="on". If this is the case,
+the BrainSlug channel will list the address of any matches against the symbols
+that it finds when loading the game. This can be useful for figuring out why
+the symbols don't work for a particular game.
+
 and then one or more <symbol> elements. These have the syntax:
     <symbol name="sym_name" size="0x100" offset="0x4" >
         <data>
