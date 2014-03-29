@@ -6,6 +6,11 @@
             41800028 3884FFFF
         </data>
     </symbol>
+    <symbol name="memcpy" size="0x298" offset="0x0" >
+        <data>
+            28850000 4D860020 7C841840 4184016C
+        </data>
+    </symbol>
     <symbol name="memchr" size="0x2c" offset="0x0" >
         <data>
             5484063E 3863FFFF 38A50001
