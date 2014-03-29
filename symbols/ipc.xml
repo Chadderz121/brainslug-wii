@@ -1,39 +1,157 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Symbols relating to communication with starlet -->
-<symbols>
-    <symbol name="IOS_OpenAsync" size="0x118" offset="0" >
+<symbols debug="on">
+    <symbol name="IOS_OpenAsync" size="0x118" offset="0x5c">
         <data>
-            9421FFD0 7C0802A6 90010034 39610030
-            4BE8DDB1 34010008 7C7B1B78 7C9C2378
-            7CBD2B78 7CDF3378 3BC00000 4082000C
-            3BC0FFFC 4800004C 806D???? 38800040
-            38A00020
+            93A30020 38A00000 38000001 80810008
         </data>
     </symbol>
-    <symbol name="IOS_Open" size="0x120" offset="0" >
+    <!-- a new version of IOS_Open rearranges a few instructions -->
+    <symbol name="IOS_Open" size="0x120" offset="0x5c" >
         <data>
-            9421FFE0 7C0802A6 90010024 34010008
-            93E1001C 93C10018 3BC00000 93A10014
-            7C9D2378 93810010 7C7C1B78 4082000C
-            3BC0FFFC 4800004C 806D???? 38800040
+            38A00000 38000001 90A30020 80810008
         </data>
     </symbol>
-    <symbol name="IOS_CloseAsync" size="0xc0" offset="0" >
+    <symbol name="IOS_Open" size="0x120" offset="0x5c" >
         <data>
-            9421FFE0 7C0802A6 90010024 34010008
-            93E1001C 3BE00000 93C10018 7CBE2B78
-            93A10014 7C9D2378 93810010 7C7C1B78
-            4082000C 3BE0FFFC 4800004C 806D????
-            38800040 38A00020 4??????? 2C030000
-            90610008 4082000C 3BE0FFEA 48000028
-            93A30020
+            38A00000 90A30020 38000001 80810008
         </data>
     </symbol>
-    <symbol name="IOS_Close" size="0xa8" offset="0" >
+    <symbol name="IOS_CloseAsync" size="0xc0" offset="0x60" >
         <data>
-            9421FFE0 7C0802A6 90010024 34010008
-            93E1001C 3BE00000 93C10018 7C7E1B78
-            4082000C 3BE0FFFC 4800004C 806D????
+            93A30020 38A00000 38000002 80810008
+        </data>
+    </symbol>
+    <!-- a new version of IOS_Close rearranges a few instructions -->
+    <symbol name="IOS_Close" size="0xa8" offset="0x50" >
+        <data>
+            38A00000 38000002 90A30020 80810008
+        </data>
+    </symbol>
+    <symbol name="IOS_Close" size="0xa8" offset="0x50" >
+        <data>
+            38A00000 90A30020 38000002 80810008
+        </data>
+    </symbol>
+    <symbol name="IOS_ReadAsync" size="0x100" offset="0x64" >
+        <data>
+            38A00000 38000003 80810008 93E40024
+        </data>
+    </symbol>
+    <!-- a new version of IOS_Read rearranges a few instructions -->
+    <symbol name="IOS_Read" size="0x108" offset="0x60" >
+        <data>
+            38A00000 38000003 90A30020 80810008
+        </data>
+    </symbol>
+    <symbol name="IOS_Read" size="0x108" offset="0x60" >
+        <data>
+            38A00000 90A30020 38000003 80810008
+        </data>
+    </symbol>
+    <symbol name="IOS_WriteAsync" size="0x100" offset="0x60" >
+        <data>
+            93A30020 38A00000 38000004 80810008
+        </data>
+    </symbol>
+    <!-- a new version of IOS_Write rearranges a few instructions -->
+    <symbol name="IOS_Write" size="0x108" offset="0x60" >
+        <data>
+            38A00000 38000004 90A30020 80810008
+        </data>
+    </symbol>
+    <symbol name="IOS_Write" size="0x108" offset="0x60" >
+        <data>
+            38A00000 90A30020 38000004 80810008
+        </data>
+    </symbol>
+    <symbol name="IOS_SeekAsync" size="0xe0" offset="0x60" >
+        <data>
+            93A30020 38A00000 38000005 80810008
+        </data>
+    </symbol>
+    <!-- a new version of IOS_Seek rearranges a few instructions -->
+    <symbol name="IOS_Seek" size="0xe8" offset="0x60" >
+        <data>
+            38A00000 38000005 90A30020 80810008
+        </data>
+    </symbol>
+    <symbol name="IOS_Seek" size="0xe8" offset="0x60" >
+        <data>
+            38A00000 90A30020 38000005 80810008
+        </data>
+    </symbol>
+    <symbol name="IOS_IoctlAsync" size="0x138" offset="0x6c" >
+        <data>
+            93A30020 38A00000 38000006 80810008
+        </data>
+    </symbol>
+    <!-- a new version of IOS_Seek rearranges a few instructions -->
+    <symbol name="IOS_Ioctl" size="0x130" offset="0x64" >
+        <data>
+            38A00000 38000006 90A30020 80810008
+        </data>
+    </symbol>
+    <symbol name="IOS_Ioctl" size="0x130" offset="0x64" >
+        <data>
+            38A00000 90A30020 38000006 80810008
+        </data>
+    </symbol>
+    <symbol name="IOS_IoctlvAsync" size="0xe4" offset="0x68" >
+        <data>
+            93A30020 38A00000 38000007 80810008
+        </data>
+    </symbol>
+    <!-- a new version of IOS_Ioctlv rearranges a few instructions -->
+    <symbol name="IOS_Ioctlv" size="0xdc" offset="0x28" >
+        <data>
+            7CFE3B78 3BE00000 4082000C 3BE0FFFC
+            4800004C 806D???? 38800040 38A00020
+            4??????? 2C030000 90610008 4082000C
+            3BE0FFEA 48000028 38A00000 38000007
+            90A30020 80810008 90A40024 80810008
+            90A40028 90030000 93430008 2C1F0000
+            40820038 80610008 7F64DB78
+        </data>
+    </symbol>
+    <symbol name="IOS_Ioctlv" size="0xdc" offset="0x28" >
+        <data>
+            7CFE3B78 3BE00000 4082000C 3BE0FFFC
+            4800004C 806D???? 38800040 38A00020
+            4??????? 2C030000 90610008 4082000C
+            3BE0FFEA 48000028 38A00000 90A30020
+            38000007
+        </data>
+    </symbol>
+    <!-- an old version of IOS_IoctlvReboot is very short -->
+    <!-- a new version of IOS_IoctlvReboot rearranges a few instructions -->
+    <symbol name="IOS_IoctlvReboot" size="0xe8" offset="0x28" >
+        <data>
+            7CFE3B78 3BE00000 4082000C 3BE0FFFC
+            4800004C 806D???? 38800040 38A00020
+            4??????? 2C030000 90610008 4082000C
+            3BE0FFEA 48000028 38A00000 38000007
+            90A30020 80810008 90A40024 80810008
+            90A40028 90030000 93430008 2C1F0000
+            40820044 80610008 38000001
+        </data>
+    </symbol>
+    <symbol name="IOS_IoctlvReboot" size="0x2fc" offset="0x50" >
+        <data>
+            34010008 3BE00000 4082000C 3BE0FFFC
+            4800004C 806D???? 38800040 38A00020
+            4??????? 2C030000 90610008 4082000C
+            3BE0FFEA 48000028 38A00000 38000007
+            90A30020
+        </data>
+    </symbol>
+    <symbol name="IOS_IoctlvReboot" size="0x2fc" offset="0x50" >
+        <data>
+            34010008 3BE00000 4082000C 3BE0FFFC
+            4800004C 806D???? 38800040 38A00020
+            4??????? 2C030000 90610008 4082000C
+            3BE0FFEA 48000028 38A00000 90A30020
+            38000007            
         </data>
     </symbol>
 </symbols>
