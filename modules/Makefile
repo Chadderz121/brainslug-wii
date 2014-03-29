@@ -22,7 +22,7 @@ PHONY += all
 all: $(addsuffix _module,$(MODULES))
 
 %_module:
-	$(MAKE) -C $*
+	$Q$(MAKE) -C $*
 	
 ###############################################################################
 # Install rule
@@ -52,7 +52,7 @@ PHONY += clean
 clean: $(addsuffix _module_clean,$(MODULES))
 	
 %_module_clean:
-	$(MAKE) -C $* clean
+	$Q$(MAKE) -C $* clean
 
 ###############################################################################
 # Phony targets

@@ -24,10 +24,18 @@
 
 #include <bslug.h>
 
-/* support any game id */
+/* Which game to support. ? is a wild card (e.g. RMC? is any version of Mario
+ * Kart Wii) */
 BSLUG_MODULE_GAME("????");
 BSLUG_MODULE_NAME("BSlug Module template");
 BSLUG_MODULE_VERSION("v1.0");
 BSLUG_MODULE_AUTHOR("Chadderz");
+/* quick guide to licenses:
+ * BSD - Open source, anyone can use code for any purpose, even commercial.
+ * GPL - Open source, anyone can use code but only in open source projects.
+ * Freeware - Closed source, must be distributed for no monetary cost.
+ * Proprietary - Closed source, may cost money, may be limited to individuals.
+ * For more info search online!
+ */
 BSLUG_MODULE_LICENSE("BSD");
 
