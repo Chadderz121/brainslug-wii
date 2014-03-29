@@ -340,7 +340,7 @@ static const unsigned char multidol[] = {
 
 static void _start_gecko(void);
 
-BSLUG_REPLACE(_start, _start_gecko);
+BSLUG_MUST_REPLACE(_start, _start_gecko);
 
 static void _start_gecko(void) {
     memcpy((void*)0x80001800, codehandler, sizeof(codehandler));

@@ -1,4 +1,4 @@
-/* GXTransform.h
+/* vi.h
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -22,20 +22,12 @@
  * SOFTWARE.
  */
 
-/* definitions of symbols inferred to exist in the GXTransform header file for
+/* definitions of symbols inferred to exist in the vi header file for
  * which the brainslug symbol information is available. */
 
-#ifndef _RVL_GXTRANSFORM_H_
-#define _RVL_GXTRANSFORM_H_
+#ifndef _RVL_VI_H_
+#define _RVL_VI_H_
 
-#include <stdbool.h>
+void VISetNextFrameBuffer(void *frame_buffer);
 
-void GXSetViewportJitter(
-    float x, float y, float width, float height, float z, float depth, 
-    bool field);
-void GXSetViewport(
-    float x, float y, float width, float height, float z, float depth);
-void GXSetScissor(
-    unsigned int x, unsigned int y, unsigned int width, unsigned int height);
-
-#endif /* _RVL_GXTRANSFORM_H_ */
+#endif /* _RVL_VI_H_ */

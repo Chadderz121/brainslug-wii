@@ -1,4 +1,4 @@
-/* GXTransform.h
+/* GXFrameBuf.h
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
@@ -22,20 +22,21 @@
  * SOFTWARE.
  */
 
-/* definitions of symbols inferred to exist in the GXTransform header file for
+/* definitions of symbols inferred to exist in the GXFrameBuf header file for
  * which the brainslug symbol information is available. */
 
-#ifndef _RVL_GXTRANSFORM_H_
-#define _RVL_GXTRANSFORM_H_
+#ifndef _RVL_GXFRAMEBUF_H_
+#define _RVL_GXFRAMEBUF_H_
 
-#include <stdbool.h>
+enum {
+    GX_COPY_PROGRESSIVE = 0,
+    GX_COPY_INTLC_EVEN = 2,
+    GX_COPY_INTLC_ODD = 3,
+};
 
-void GXSetViewportJitter(
-    float x, float y, float width, float height, float z, float depth, 
-    bool field);
-void GXSetViewport(
-    float x, float y, float width, float height, float z, float depth);
-void GXSetScissor(
-    unsigned int x, unsigned int y, unsigned int width, unsigned int height);
+void GXSetDispCopyDst(unsigned short width, unsigned short height);
+void GXSetDispCopyFrame2Field(int mode);
+float GXGetYScaleFactor(unsigned short efb_height, unsigned short xfb_height);
+void GXSetDispCopyYScale(float factor);
 
 #endif /* _RVL_GXTRANSFORM_H_ */

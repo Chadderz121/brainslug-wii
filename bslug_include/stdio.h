@@ -41,4 +41,31 @@
 #define	SEEK_END	2	/* set file offset to EOF plus offset */
 #endif
 
+/* the exact details of the FILE structure are all largely guesswork */
+typedef int (*device_file_read_t)(
+    int fd, void *buffer, size_t *length, void *device_ptr);
+typedef int (*device_file_write_t)(
+    int fd, const void *buffer, size_t *length, void *device_ptr);
+typedef int (*device_file_close_t)(int fd);
+
+typedef struct device_file {
+} device_file_t;
+
+typedef struct file {
+    int fd; /* 0x00 */
+    unsigned char unknown04[0x1c - 0x04]; /* 0x04 */
+    void *buffer; /* 0x1c */
+    size_t buffer_size; /* 0x20 */
+    void *buffer_end; /* 0x24 */
+    size_t io_size; /* 0x28 */
+    unsigned char unknown2c[0x3c - 0x2c]; /* 0x2c */
+    device_file_read_t read_fn; /* 0x3c */
+    device_file_write_t write_fn; /* 0x40 */
+    device_file_close_t close_fn; /* 0x44 */
+    void *device_ptr; /* 0x48 */
+    struct FILE *next_file; /* 0x4c */
+} FILE;
+
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+
 #endif /* _STDIO_H_ */

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the rvl/vi.h header -->
+<symbols>
+    <symbol name="VISetNextFrameBuffer" size="0x6c" offset="0x2c">
+        <data>
+            93C70030 7CE33B78 38870034
+        </data>
+    </symbol>
+</symbols>

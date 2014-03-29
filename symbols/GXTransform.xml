@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Symbols in the rvl/GXTransform.h header -->
 <symbols>
+    <symbol name="GXSetViewportJitter" size="0x3c" offset="0xc">
+        <data>
+            EC420028 8062???? D0230544 D0430548
+        </data>
+    </symbol>
     <!-- Dang this is annoying. GXSetViewportJitter ends the same as
          GXSetViewport, meaning I have to search based on an instruction before
          the method. -->

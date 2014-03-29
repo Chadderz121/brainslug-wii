@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the standard stdio.h header -->
+<symbols>
+    <symbol name="fwrite" size="0x308" offset="0x80" >
+        <data>
+            54606FFF 41820010 54603FBE
+        </data>
+    </symbol>
+</symbols>

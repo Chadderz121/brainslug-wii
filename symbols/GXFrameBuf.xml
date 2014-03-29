@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the rvl/GXFrameBuf.h header -->
+<symbols>
+    <symbol name="GXSetDispCopyDst" size="0x24" offset="0x8">
+        <data>
+            7C002E70 38600000 500305BE
+        </data>
+    </symbol>
+    <symbol name="GXSetDispCopyFrame2Field" size="0x20" offset="0x4">
+        <data>
+            8004023C 506064A6
+        </data>
+    </symbol>
+    <symbol name="GXGetYScaleFactor" size="0x230" offset="0x84">
+        <data>
+            546405FE 541F402E 7C7F2396
+        </data>
+    </symbol>
+    <symbol name="GXSetDispCopyYScale" size="0xcc" offset="0x24">
+        <data>
+            3800004E 38A00000 546705FE
+        </data>
+    </symbol>
+</symbols>
