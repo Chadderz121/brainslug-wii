@@ -1,0 +1,27 @@
+Channel Changelog
+=================
+
+v0.01 - 2014-03-29
+------------------
+* Initial Release
+* Loads BrainSlug v0.01 modules
+* Supports BSLUG_REPLACE, BSLUG_MUST_REPLACE
+* Never tested support for BSLUG_EXPORT
+* Supports direct symbol search
+
+Module Builder ChangeLog
+========================
+
+v0.01 - 2014-03-29
+------------------
+* Initial Release
+* Metadata: name, author, version, license and game supported
+* BSLUG_REPLACE and BSLUG_MUST_REPLACE for replacing game functions
+* BSLUG_EXPORT for exporting symbols to other modules
+* Header files and symbol information for:
+  - most of string.h
+  - *printf methods
+  - rvl/ipc.h
+  - rvl/OSTime.h
+  - most of time.h
+  - An assortment of random GX methods

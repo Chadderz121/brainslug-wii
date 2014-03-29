@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  <app version="1">
+    <name>BrainSlug Wii</name>
+    <coder>Chadderz</coder>
+    <version>v0.01</version>
+    <release_date>20140329000000</release_date>
+    <short_description>BrainSlug Patching Engine</short_description>
+    <long_description>BrainSlug is a specialised Wii disc loader which is designed to allow the loaded game to be patched. BrainSlug is designed to make the process of adding functionality to Wii games much easier and more enjoyable for all.
+
+The BrainSlug channel is still very simple, it lacks any sort of user interface or even configuration file. When it starts, BrainSlug immediately begins loading the disc in the drive. It then searches sd:/bslug/modules for .mod BrainSlug module files. It also searches sd:/bslug/symbols for .xml symbol information. Using all of this information it patches the game and boots it. If any error messages or warnings occur, you will need to press the RESET button on the Wii before it can be launched or the channel exits.</long_description>
+  </app>

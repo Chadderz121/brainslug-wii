@@ -1,0 +1,80 @@
+BrainSlug symbol information is stored in a simple xml format. All documents
+must begin with:
+    <?xml version="1.0" encoding="UTF-8"?>
+
+This is then followed by:
+<symbols>
+
+and then one or more <symbol> elements. These have the syntax:
+    <symbol name="sym_name" size="0x100" offset="0x4" >
+        <data>
+            4142???? 45??4748
+        </data>
+        <reloc type="ha" offset="0x4" symbol="reloc_sym" />
+        <reloc type="lo" offset="0xc" symbol="reloc_sym" />
+    </symbol>
+    
+Every <symbol> MUST have a name attribute which matches the name in the C source
+code.
+The size and offset attributes are optional. Size determines the number of
+bytes that are considered part of the symbol. Offset determines the relative
+location of the data to the symbol. 0x4 means that the data occurs 4 bytes AFTER
+from the symbol address. This number can be negative to indicate the pattern
+occurring before the symbol, though this is bad practice as it generally relies
+on the symbols occurring in a set order, which may not be the case in all games.
+
+The <data> is what the BrainSlug loader uses to find the symbol, it tries to
+match the data somewhere with the games executable. The <data> tag should be
+hexadecimal, but may contain ? as a wild card. This only occurs once, after the
+game's `main.dol' has been loaded, so symbols in dynamically loaded files such
+as `.rel' files cannot be found. Try to make the data short, ideally test it on
+a few games. It's OK for the same symbol to appear lots of times with different
+<data> if there are different versions of that method in different games for
+example.
+
+<reloc> tags are optional. The symbol may have one or more reloc tags, these
+indicate that this symbol references other symbols. Presently the BrainSlug
+loader ignores this information, but the intention is to allow it to find
+symbols which are hard to find indirectly, by finding a symbol which references
+the symbol. The reloc offsets are relative to the start of the symbol.
+The valid types values are:
+    "addr"  - full address of the relocated symbol as 4 bytes.
+    "lo"    - the lowest 16 bits of the address of the symbol are in the lowest
+              16 bits of the 32-bit instruction at the offset.
+    "hi"    - the highest 16 bits of the address of the symbol are in the lowest
+              16 bits of the 32-bit instruction at the offset.
+    "ha"    - the highest 16 bits of the address of the symbol are in the lowest
+              16 bits of the 32-bit instruction at the offset. The value is then
+              adjusted so that if the lowest 16-bits of the symbol address would
+              be treated as negative, one is added to the highest 16-bits.
+    "b"     - the offset points to a branch which branches to the symbol.
+    "bc"    - the offset points to a conditional branch which branches to the
+              symbol.
+    "sda21" - the offset points to a load instruction which loads from either r2
+              or r13; the small data areas. These are special registers which
+              never change, so accordingly have a special relocation.
+
+If you're not familiar with relocations here are some rules of thumb:
+
+Instructions like the following sequences are often used for loading global
+variables. The first instruction is a "ha" relocation and the second is a "lo".
+    lis r3,-32768
+    lwz r4,256(r3)
+    
+    lwz r11,-32768
+    addi r11,r11,256
+    
+Instructions like the following sequence are rarer but are sometimes used to
+load addresses. The first instruction is a "hi" relocation and the second is a
+"lo". This is because ori has an unsigned argument.
+    lis r3,-32768
+    ori r3,r3,256
+
+Instructions like the following ones are used to load small constants or global
+variables. They are all "sda21" relocations.
+    lwz r3,-32768(r2)
+    stfs f0,-32768(r13)
+    lfd f31,-32768(r2)
+
+the document ends with:
+    </symbol>

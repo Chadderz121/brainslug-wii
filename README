@@ -1,0 +1,34 @@
+BrainSlug Wii
+    by Chadderz
+
+BrainSlug is a specialised Wii disc loader which is designed to allow the loaded
+game to be patched. What sets BrainSlug apart is that the patches it applies are
+not just simple copying patches, but in fact relocatable ELF files. The idea is
+that a C programmer who is unfamiliar with the intricacies of assembly code can
+write C code as normal and have BrainSlug take care of linking this into the
+game. Thus the process of adding functionality to Wii games is made much easier
+and more enjoyable for all.
+
+The compiled code for adding modifications to the game are called BrainSlug
+modules. These modules must be made in quite a specific way, so a template
+module is provided in modules/template. More information about getting started
+with module development can be found in modules/README.
+
+This project is in several parts:
+    bslug_include - Header files used by BrainSlug modules.
+    modules       - A collection of premade BrainSlug modules.
+    src           - The BrainSlug Wii channel, which actually does the patching.
+    symbols       - Symbol information needed by the channel to perform linking.
+    test          - Regression testing for the Wii channel.
+
+The game's symbols are found by a simple search which is explained in
+symbols/README.
+
+See INSTALLING for information about how to install and use BrainSlug for
+development purposes.
+
+See BUILDING for information about building the channel itself.
+
+See USAGE for information aimed at end users of the channel.
+
+See CHANGELOG for version information.

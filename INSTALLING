@@ -1,0 +1,16 @@
+To install BrainSlug for development of modules you must first have a copy of
+devkitPro, specifically with devkitPPC included:
+    http://sourceforge.net/projects/devkitpro/
+
+In the root directory of the BrainSlug repository, run the following commands:
+    make clean && make -C modules clean
+    make install
+    
+It may be necessary to run the last command with administrative privileges.
+
+This installs the necessary headers into a bslug subdirectory within devkitPro.
+Now BrainSlug modules can be compiled. See modules/README for more information
+about BrainSlug module development.
+
+To uninstall run:
+    make uninstall

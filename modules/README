@@ -1,0 +1,83 @@
+BrainSlug module development is designed to be a simple way to extend the
+functionality of games. A BrainSlug module is just compiled C code which is
+patched into a game seamlessly.
+
+For ease, I recommend you base all new BrainSlug modules on the template
+project. The template project has no actual code; but it does compile to a valid
+module. All modules MUST declare the following statements ONCE at top level:
+    BSLUG_MODULE_NAME("BSlug Module template");
+    BSLUG_MODULE_VERSION("v1.0");
+    BSLUG_MODULE_AUTHOR("Chadderz");
+    BSLUG_MODULE_LICENSE("BSD");
+    
+The BSLUG_MODULE_NAME macro defines the name of the module as it will be
+displayed to users in logging messages. This can be any string.
+The BSLUG_MODULE_VERSION macro defines the version of the module as it will
+be displayed to users in logging messages. This can be any string.
+The BSLUG_MODULE_AUTHOR macro defines the version of the module as it will
+be displayed to users in logging messages. This can be any string.
+The BSLUG_MODULE_LICENSE macro defines the license under which the module is
+released. This can be any string. I recommend you put a short name for the
+license here rather than the full text. Recommended values include:
+    "BSD" - Open source, anyone can use code for any purpose, even commercial.
+    "GPL" - Open source, anyone can use code but only in open source projects.
+    "Freeware" - Closed source, must be distributed for no monetary cost.
+    "Proprietary" - Closed source, may cost, may be limited to individuals.
+
+A module can also optionally specify:
+    BSLUG_MODULE_GAME("RMC?");
+
+The BSLUG_MODULE_GAME macro defines which games your module supports. This is
+done using the disc ID. For example, RMCP is the disc ID of Mario Kart Wii in
+PAL regions. Specifying BSLUG_MODULE_GAME("RMC?") would mark the module as
+compatible with any region of Mario Kart because ? is a wildcard. Omitting this
+declaration means the module is compatible with all games. Any characters not
+specified are treated as wildcards so "RMC?" is the same as "RMC".
+
+The action of the BrainSlug loader can be controlled with three commands:
+    BSLUG_REPLACE
+    BSLUG_MUST_REPLACE
+    BSLUG_EXPORT
+    
+BSLUG_REPLACE and BSLUG_MUST_REPLACE instruct BrainSlug to replace one of the
+games functions with another function, for example one you've defined. The
+syntax is:
+    BSLUG_REPLACE(game_function, replacement);
+The only difference between the two is that if the function cannot be found in
+the game, it is skipped for BSLUG_REPLACE but the whole module fails to load
+with an error message displayed to the user for BSLUG_MUST_REPLACE.
+
+The idea of the BrainSlug replacement system is to allow you to extend game
+functionality by intercepting method calls. For example, you could intercept
+library calls and log them. To do this, simply write a method with the same
+arguments and return value as the method you are replacing and add the
+BSLUG_REPLACE or BSLUG_MUST_REPLACE macro as above. Whenever the game attempts
+to call the method you've replaced, it will instead branch to your method. The
+best part is: the code you write can still call the original game method. Thus
+a wrapper can be something like:
+    int myIOS_Open(const char *path, int mode) {
+        int result = IOS_Open(path, mode);
+        printf("IOS_Open(%s, %d) = %d\n", path, mode, result);
+        return result;
+    }
+    BSLUG_REPLACE(IOS_Open, myIOS_Open);
+
+The unfortunate thing about this environment is you can only replace or call
+game functions for which BrainSlug symbol information is available. The symbols
+are defined by the sd:/bslug/symbols directory on the SD card. More information
+can be found in the symbols/README file.
+
+BSLUG_EXPORT makes a symbol available to other BrainSlug modules. The intention
+of this is to allow library modules to be written which don't actually modify
+the game, but instead just provide functionality on top of the game.
+
+Some observations about BrainSlug module coding:
+    * Games don't (typically) just have one heap, so there is no `malloc' for
+      you to call. Instead they provide allocation methods to specific heaps
+      (although only one `free' method). Ideally write your module to avoid
+      memory allocation all together. If you must use their heaps, it won't be
+      portable between games and they have a habit of freeing entire heaps
+      automatically when you're not expecting it. You have been warned.
+    * Games don't (typically) use stdio so don't expect fopen to even be
+      available. The games tend to prefer specific methods like DVDOpen or
+      NANDOpen.

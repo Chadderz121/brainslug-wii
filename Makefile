@@ -82,6 +82,8 @@ LOG    ?= @echo $@
 BUILD  ?= build
 # The output directory for compiled results.
 BIN    ?= bin
+# The output directory for releases.
+RELEASE?= release
 # The name of the output file to generate.
 TARGET ?= $(BIN)/boot.dol
 # The name of the assembler listing file to generate.
@@ -133,6 +135,23 @@ PHONY += uninstall
 uninstall : 
 	$(LOG)
 	-$Qrm -rf $(BSLUGDIR)
+	
+###############################################################################
+# Release rules
+
+PHONY += release
+release: $(TARGET) meta.xml icon.png
+	$(LOG)
+	-$Qmkdir $(RELEASE)
+	-$Qmkdir $(RELEASE)/apps
+	-$Qmkdir $(RELEASE)/apps/brainslug
+	$Qcp -r $(TARGET) $(RELEASE)/apps/brainslug
+	$Qcp -r meta.xml $(RELEASE)/apps/brainslug
+	$Qcp -r icon.png $(RELEASE)/apps/brainslug
+	-$Qmkdir $(RELEASE)/bslug
+	$Qcp -r symbols $(RELEASE)/bslug
+	-$Qmkdir $(RELEASE)/bslug/modules
+	$Qcp -r USAGE $(RELEASE)/readme.txt
 
 ###############################################################################
 # Recursive rules
@@ -214,6 +233,7 @@ PHONY += clean
 clean : 
 	-$Qrm -rf $(BUILD)
 	-$Qrm -rf $(BIN)
+	-$Qrm -rf $(RELEASE)
 
 ###############################################################################
 # Phony targets
