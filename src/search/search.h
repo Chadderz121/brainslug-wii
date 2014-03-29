@@ -33,6 +33,9 @@
 #include "library/event.h"
 
 extern event_t search_event_complete;
+extern bool search_has_error;
+/* whether or not to delay loading for debug messages. */
+extern bool search_has_info;
 
 bool Search_Init(void);
 bool Search_RunBackground(void);

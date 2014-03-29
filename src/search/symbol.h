@@ -51,6 +51,7 @@ typedef struct {
     const uint8_t *data;
     const uint8_t *mask;
     size_t data_size;
+    bool debugging;
     const symbol_relocation_t *relocation;
 } symbol_t;
 

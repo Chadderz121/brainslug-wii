@@ -67,14 +67,6 @@ int main(void) {
     /* main thread is UI, so set thread prior to UI */
     LWP_SetThreadPriority(LWP_GetSelf(), THREAD_PRIO_UI);
 
-    /* spawn lots of worker threads to do stuff */
-    if (!Apploader_RunBackground())
-        goto exit_error;
-    if (!Module_RunBackground())
-        goto exit_error;
-    if (!Search_RunBackground())
-        goto exit_error;
-
     /* configure the video */
     VIDEO_Init();
     
@@ -86,6 +78,14 @@ int main(void) {
     console_init(
         frame_buffer, 20, 20, rmode->fbWidth, rmode->xfbHeight,
         rmode->fbWidth * VI_DISPLAY_PIX_SZ);
+
+    /* spawn lots of worker threads to do stuff */
+    if (!Apploader_RunBackground())
+        goto exit_error;
+    if (!Module_RunBackground())
+        goto exit_error;
+    if (!Search_RunBackground())
+        goto exit_error;
         
     VIDEO_Configure(rmode);
     VIDEO_SetNextFramebuffer(frame_buffer);
@@ -122,15 +122,14 @@ int main(void) {
     
     Event_Trigger(&main_event_fat_loaded);
         
-    printf("Waiting for game disk... ");
+    printf("Waiting for game disk...\n");
     Event_Wait(&apploader_event_disk_id);
-    printf("%.4s", os0->disc.gamename);
-    printf("\n");
+    printf("Game ID: %.4s\n", os0->disc.gamename);
         
-    printf("Loading modules... ");
+    printf("Loading modules...\n");
     Event_Wait(&module_event_list_loaded);
     if (module_list_count == 0) {
-        printf("no valid modules found!\n");
+        printf("No valid modules found!\n");
     } else {
         size_t module;
         
@@ -151,18 +150,23 @@ int main(void) {
     }
     
     Event_Wait(&apploader_event_complete);
-    
     Event_Wait(&module_event_complete);
-
+    if (module_has_error) {
+        printf("\nPress RESET to exit.\n");
+        goto exit_error;
+    }
+    
     if (apploader_game_entry_fn == NULL) {
         fprintf(stderr, "Error... entry point is NULL.\n");
     } else {
-        printf("\nPress RESET to launch game.\n");
-        
-        while (!SYS_ResetButtonDown())
-            VIDEO_WaitVSync();
-        while (SYS_ResetButtonDown())
-            VIDEO_WaitVSync();
+        if (module_has_info || search_has_info) {
+            printf("\nPress RESET to launch game.\n");
+            
+            while (!SYS_ResetButtonDown())
+                VIDEO_WaitVSync();
+            while (SYS_ResetButtonDown())
+                VIDEO_WaitVSync();
+        }
             
         SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);
         apploader_game_entry_fn();

@@ -42,6 +42,10 @@ typedef struct {
 
 extern event_t module_event_list_loaded;
 extern event_t module_event_complete;
+extern bool module_has_error;
+/* whether or not to delay loading for debug messages. */
+extern bool module_has_info;
+
 extern size_t module_list_size;
 extern module_metadata_t **module_list;
 extern size_t module_list_count;

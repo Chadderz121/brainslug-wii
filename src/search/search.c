@@ -64,6 +64,9 @@ size_t search_module_symbols_sorted = 0;
 
 event_t search_event_complete;
 
+bool search_has_error;
+bool search_has_info;
+
 static fsm_t *search_fsm = NULL;
 
 static const char search_path[] = "sd:/bslug/symbols";
@@ -135,6 +138,8 @@ static void *Search_Main(void *arg) {
     return NULL;
 exit_error:
     printf("Search_Main: exit_error\n");
+    search_has_error = true;
+    Event_Trigger(&search_event_complete);
     return NULL;
 }
 
@@ -245,8 +250,11 @@ static void Search_Load(const char *path) {
     if (file == NULL)
         goto exit_error;
     
-    if (!Symbol_ParseFile(file))
+    if (!Symbol_ParseFile(file)) {
+        printf("Could not load symbol file %s.\n", path);
+        search_has_info = true;
         goto exit_error;
+    }
     
 exit_error:
     if (file != NULL)
@@ -300,6 +308,11 @@ static void Search_SymbolMatch(symbol_index_t symbol, uint8_t *addr) {
     symbol_data = Symbol_GetSymbol(symbol);
     if (symbol_data == NULL)
         return;
+    
+    if (symbol_data->debugging) {
+        printf("\t%p: found %s\n", addr, symbol_data->name);
+        search_has_info = true;
+    }
     
     if (search_symbol_globals[symbol].address == NULL) {
         search_symbol_globals[symbol].address = addr;
@@ -453,9 +466,15 @@ void *Search_SymbolLookup(const char *name) {
             
             /* Duplicated symbol! */
             if (result != NULL &&
-                result != search_symbol_globals[symbol->index].address)
+                result != search_symbol_globals[symbol->index].address) {
                 
+                printf(
+                    "Warning: Duplicated symbol %s (%p, %p)\n",
+                    symbol->name, result,
+                    search_symbol_globals[symbol->index].address);
+                search_has_info = true;
                 return NULL;
+            }
             
             result = search_symbol_globals[symbol->index].address;
         }

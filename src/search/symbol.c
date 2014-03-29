@@ -84,10 +84,11 @@ symbol_t *Symbol_GetSymbol(symbol_index_t index) {
 }
 
 bool Symbol_ParseFile(FILE *file) {
-    bool result = false;
+    bool result = false, set_debug;
     mxml_node_t *xml_tree = NULL;
     mxml_node_t *xml_symbols = NULL;
     mxml_node_t *xml_symbol = NULL;
+    const char *debug;
 
     xml_tree = mxmlLoadFile(NULL, file, MXML_TEXT_CALLBACK);
     if (xml_tree == NULL)
@@ -97,6 +98,9 @@ bool Symbol_ParseFile(FILE *file) {
         xml_tree, xml_tree, "symbols", NULL, NULL, MXML_DESCEND_FIRST);
     if (xml_symbols == NULL)
         goto exit_error;
+    debug = mxmlElementGetAttr(xml_symbols, "debug");
+    set_debug = debug != NULL && strcmp(debug, "on") == 0;
+    
     /* <symbol name=""> element within symbols */
     xml_symbol = mxmlFindElement(
         xml_symbols, xml_symbols, "symbol", NULL, NULL, MXML_DESCEND_FIRST);
@@ -118,6 +122,8 @@ bool Symbol_ParseFile(FILE *file) {
         if (symbol == NULL)
             goto exit_error;
 
+        symbol->debugging = set_debug;
+            
         if (size_str != NULL) {
             if (sscanf(size_str, "%" FMT_SIZE "x", &symbol->size) != 1 && 
                 sscanf(size_str, "%" FMT_SIZE "u", &symbol->size) != 1)
@@ -342,6 +348,7 @@ static symbol_t *Symbol_AllocSymbol(const char *name, size_t name_length) {
         symbol->name = name_alloc;
         symbol->relocation = NULL;
         symbol->index = symbol - symbol_globals;
+        symbol->debugging = false;
     } else {
         symbol = NULL;
     }
