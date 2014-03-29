@@ -26,6 +26,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <rvl/dwc.h>
 #include <rvl/GXFrameBuf.h>
 #include <rvl/vi.h>
 
@@ -49,6 +50,9 @@ static void Console_GXSetDispCopyFrame2Field(int mode);
  *  sets the copy height for the EFB to XFB copy to half the normal value.
  *  Calls the real GXSetDispCopyDst with half the height parameter. */
 static void Console_GXSetDispCopyDst(unsigned short width, unsigned short height);
+/* Replacement for DWC_SetLogMask.
+ *  always enables all logging. Calls DWC_SetLogMask with 0xffffffff. */
+static void Console_DWC_SetLogMask(DWC_LogType_t log_mask);
 /* Replacement for fwrite.
  *  writes messages to the file 1 and 2 to the screen. File 1 is stdout and file
  *  2 is stderr. All other calls passed through to the real fwrite. */
@@ -60,14 +64,16 @@ static void Console_PutChar(char c, unsigned int fg);
 BSLUG_MUST_REPLACE(VISetNextFrameBuffer, Console_VISetNextFrameBuffer);
 BSLUG_MUST_REPLACE(GXSetDispCopyFrame2Field, Console_GXSetDispCopyFrame2Field);
 BSLUG_MUST_REPLACE(GXSetDispCopyDst, Console_GXSetDispCopyDst);
+/* this method isn't in offline games; don't care if not patched. */
+BSLUG_REPLACE(DWC_SetLogMask, Console_DWC_SetLogMask);
 BSLUG_MUST_REPLACE(fwrite, Console_fwrite);
 
 /* A bunch of tweakable parameters. Just how tweakable these are really depends.
  * FB_* are related to the game's XFB, SCREEN_* are related to the console pane.
  * Changing the assumption that SCREEN_WIDTH == FB_WIDTH or SCREEN_HEIGHT == 
  * FB_HEIGHT / 2 would cause bad things to happen! */
-#define FB_WIDTH 608
-#define FB_HEIGHT 456
+#define FB_WIDTH console_fb_width
+#define FB_HEIGHT console_fb_height
 #define FB_DEPTH 2
 #define FB_STRIDE ((FB_WIDTH) * (FB_DEPTH))
 #define SCREEN_WIDTH FB_WIDTH
@@ -88,6 +94,9 @@ static const unsigned char console_font[];
 static int console_cursor_row;
 /* current column for printing characters */
 static int console_cursor_col;
+/* current screen dimensions */
+static int console_fb_width;
+static int console_fb_height;
 /* detected frame buffers */
 static void *console_frame_buffers[MAX_FRAME_BUFFER_COUNT];
 
@@ -118,6 +127,8 @@ static void Console_VISetNextFrameBuffer(void *frame_buffer) {
 }
 static void Console_GXSetDispCopyDst(
     unsigned short width, unsigned short height) {
+    console_fb_width = width;
+    console_fb_height = height;
     /* call down to the real Console_GXSetDispCopyDst, halving the screen
      * height */
     GXSetDispCopyDst(width, height / 2);
@@ -126,6 +137,10 @@ static void Console_GXSetDispCopyFrame2Field(int mode) {
     /* call down to the real GXSetDispCopyFrame2Field, replacing the
      * argument. */
     GXSetDispCopyFrame2Field(GX_COPY_INTLC_EVEN);
+}
+static void Console_DWC_SetLogMask(DWC_LogType_t log_mask) {
+    /* call down to the real DWC_SetLogMask enabling all logging. */
+    DWC_SetLogMask(0xffffffff);
 }
 static size_t Console_fwrite(
         const void *ptr, size_t size, size_t nmemb, FILE *stream) {
@@ -148,6 +163,8 @@ static size_t Console_fwrite(
         return fwrite(ptr, size, nmemb, stream);
 }
 static void Console_PutChar(char c, unsigned int fg) {
+    if (FB_WIDTH == 0 || FB_HEIGHT == 0)
+        return;
     if (c < ' ') {
         /* special handling for special characters. */
         switch (c) {

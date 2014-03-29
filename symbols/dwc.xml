@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the rvl/dwc.h header -->
+<symbols>
+    <!-- such a short method is hard to detect, so I rely on method order. -->
+    <symbol name="DWC_SetLogMask" size="0x8" offset="0x0" >
+        <data>
+            906D???? 4E800020
+            9421FF80 7C0802A6 90010084 93E1007C
+            7C9F2378 40860024 D8210028 D8410030
+            D8610038 D8810040 D8A10048 D8C10050
+            D8E10058 D9010060 800D
+        </data>
+        <reloc type="sda21" offset="0x0" symbol="dwc_log_mode" />
+    </symbol>
+    <symbol name="DWC_Log" size="0x344" offset="0x0" >
+        <data>
+            9421FF80 7C0802A6 90010084 93E1007C
+            7C9F2378 40860024 D8210028 D8410030
+            D8610038 D8810040 D8A10048 D8C10050
+            D8E10058 D9010060 800D????
+        </data>
+        <reloc type="sda21" offset="0x38" symbol="dwc_log_mode" />
+    </symbol>
+</symbols>
