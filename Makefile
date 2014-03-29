@@ -99,7 +99,7 @@ SRC      :=
 # Phony targets
 PHONY    :=
 # Include directories
-INC_DIRS := include .
+INC_DIRS := .
 # Library directories
 LIB_DIRS := $(DEVKITPPC) $(DEVKITPPC)/powerpc-eabi \
             $(DEVKITPRO)/libogc $(DEVKITPRO)/libogc/lib/wii \
@@ -213,9 +213,7 @@ list  : $(LIST)
 PHONY += clean
 clean : 
 	-$Qrm -rf $(BUILD)
-	-$Qrm -f $(TARGET)
-	-$Qrm -f $(LIST)
-	-$Qrm -f $(MAP)
+	-$Qrm -rf $(BIN)
 
 ###############################################################################
 # Phony targets
