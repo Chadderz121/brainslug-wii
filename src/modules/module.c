@@ -318,7 +318,8 @@ static void Module_Load(const char *path) {
     Elf *elf = NULL;
     
     /* check for compile errors */
-    assert(elf_version(EV_CURRENT) != EV_NONE);
+    if (elf_version(EV_CURRENT) == EV_NONE)
+        goto exit_error;
     
     fd = open(path, O_RDONLY, 0);
     
