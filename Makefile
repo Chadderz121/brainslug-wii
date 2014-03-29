@@ -123,7 +123,7 @@ install : bslug_include modules symbols bslug.ld  bslug_elf.ld
 	$(LOG)
 	-$Qmkdir $(BSLUGDIR)
 	$Qcp -r bslug_include $(BSLUGDIR)/include
-	$Qcp -r modules $(BSLUGDIR)
+	$Q$(MAKE) -C modules install BSLUGDIR=$(BSLUGDIR)
 	$Qcp -r symbols $(BSLUGDIR)
 	$Qcp -r bslug.ld $(BSLUGDIR)
 	$Qcp -r bslug_elf.ld $(BSLUGDIR)
