@@ -166,7 +166,11 @@ CFLAGS  += $(patsubst %,-I %,$(INC_DIRS)) \
 OBJECTS := $(patsubst %.c,$(BUILD)/%.c.o,$(filter %.c,$(SRC)))
           
 ifeq ($(words $(filter clean%,$(MAKECMDGOALS))),0)
+ifeq ($(words $(filter install%,$(MAKECMDGOALS))),0)
+ifeq ($(words $(filter uninstall%,$(MAKECMDGOALS))),0)
   include $(patsubst %.c,$(BUILD)/%.c.d,$(filter %.c,$(SRC)))
+endif
+endif
 endif
 
 ###############################################################################

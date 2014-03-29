@@ -36,6 +36,8 @@
  * - vsnprintf
  */
  
+#include <stdarg.h>
+ 
 #ifndef EOF
 #define	EOF	(-1)
 #endif

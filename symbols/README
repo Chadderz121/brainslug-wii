@@ -61,7 +61,7 @@ variables. The first instruction is a "ha" relocation and the second is a "lo".
     lis r3,-32768
     lwz r4,256(r3)
     
-    lwz r11,-32768
+    lis r11,-32768
     addi r11,r11,256
     
 Instructions like the following sequence are rarer but are sometimes used to

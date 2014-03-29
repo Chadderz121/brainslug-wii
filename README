@@ -2,12 +2,12 @@ BrainSlug Wii
     by Chadderz
 
 BrainSlug is a specialised Wii disc loader which is designed to allow the loaded
-game to be patched. What sets BrainSlug apart is that the patches it applies are
-not just simple copying patches, but in fact relocatable ELF files. The idea is
-that a C programmer who is unfamiliar with the intricacies of assembly code can
-write C code as normal and have BrainSlug take care of linking this into the
-game. Thus the process of adding functionality to Wii games is made much easier
-and more enjoyable for all.
+game's functions to be patched. What sets BrainSlug apart is that the patches it
+applies are not just simple copying patches, but in fact relocatable ELF files.
+The idea is that a C programmer who is unfamiliar with the intricacies of
+assembly code can write C code as normal and have BrainSlug take care of linking
+this into the game. Thus the process of adding functionality to Wii games is
+made much easier and more enjoyable for all.
 
 The compiled code for adding modifications to the game are called BrainSlug
 modules. These modules must be made in quite a specific way, so a template
