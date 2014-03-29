@@ -268,6 +268,11 @@ static void *Aploader_Main(void *arg) {
     os0->threads.simulated_memory_size = 0x01800000;
     os0->threads.bus_speed = 0x0E7BE2C0;
     os0->threads.cpu_speed = 0x2B73A840;
+    
+    /* FIXME: We don't currently reload IOS. To prevent Error #002 we pretend
+     * like we have. */
+    os1->ios_number = os1->expected_ios_number;
+    os1->ios_revision = os1->expected_ios_revision;
 
     os1->fst = os0->info.fst;
     memcpy(os1->application_name, os0->disc.gamename, 4);
