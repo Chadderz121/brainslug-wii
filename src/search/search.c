@@ -442,6 +442,10 @@ void *Search_SymbolLookup(const char *name) {
         if (search_symbol__start != NULL)
             return search_symbol__start;
         return apploader_game_entry_fn;
+    } else if (strcmp(name, "bslug_game_start") == 0) {
+        return apploader_app0_start;
+    } else if (strcmp(name, "bslug_game_end") == 0) {
+        return apploader_app0_end;
     }
     
     result = NULL;

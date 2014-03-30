@@ -97,6 +97,12 @@ typedef struct bslug_loader_entry_t {
 #define BSLUG_MODULE_VERSION(x) BSLUG_META(version, x)
 #define BSLUG_MODULE_LICENSE(x) BSLUG_META(license, x)
 
+/* bslug_game_start - first address that is part of the game's executable.
+ * bslug_game_end   - address after the end of the game's executable.
+ * Added in BSLUG_LIB_VERSION 0.1.1 */
+extern uint8_t bslug_game_start[];
+extern uint8_t bslug_game_end[];
+
 #ifdef __cplusplus
 extern "C" {
 #endif

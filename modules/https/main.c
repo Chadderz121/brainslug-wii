@@ -36,8 +36,8 @@ void _start(void);
 
 static void _start_https(void)
 {
-   char *cur = (char *)0x80000000;
-   const char *end = (char *)0x80A00000;
+   char *cur = (char *)bslug_game_start;
+   const char *end = (char *)bslug_game_end;
 
    do
    {
