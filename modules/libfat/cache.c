@@ -227,8 +227,11 @@ bool _FAT_cache_writePartialSector (CACHE* cache, const void* buffer, sec_t sect
 	if(entry==NULL) return false;
 
 	sec = sector - entry->sector;
-	memcpy(entry->cache + ((sec*cache->bytesPerSector) + offset),buffer,size);
-
+    if (buffer != NULL)
+        memcpy(entry->cache + ((sec*cache->bytesPerSector) + offset),buffer,size);
+    else
+        memset(entry->cache + ((sec*cache->bytesPerSector) + offset),0,size);
+        
 	entry->dirty = true;
 	return true;
 }
@@ -261,7 +264,8 @@ bool _FAT_cache_eraseWritePartialSector (CACHE* cache, const void* buffer, sec_t
 
 	sec = sector - entry->sector;
 	memset(entry->cache + (sec*cache->bytesPerSector),0,cache->bytesPerSector);
-	memcpy(entry->cache + ((sec*cache->bytesPerSector) + offset),buffer,size);
+    if (buffer != NULL)
+        memcpy(entry->cache + ((sec*cache->bytesPerSector) + offset),buffer,size);
 
 	entry->dirty = true;
 	return true;

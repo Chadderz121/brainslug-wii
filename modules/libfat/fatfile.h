@@ -70,37 +70,37 @@ struct _FILE_STRUCT {
 
 typedef struct _FILE_STRUCT FILE_STRUCT;
 
-int _FAT_open_r (struct _reent *r, void *fileStruct, PARTITION *partition, const char *path, int flags, int mode);
+int FAT_open_r (struct _reent *r, void *fileStruct, PARTITION *partition, const char *path, int flags, int mode);
 
-int _FAT_close_r (struct _reent *r, int fd);
+int FAT_close_r (struct _reent *r, int fd);
 
-ssize_t _FAT_write_r (struct _reent *r,int fd, const char *ptr, size_t len);
+ssize_t FAT_write_r (struct _reent *r,int fd, const char *ptr, size_t len);
 
-ssize_t _FAT_read_r (struct _reent *r, int fd, char *ptr, size_t len);
+ssize_t FAT_read_r (struct _reent *r, int fd, char *ptr, size_t len);
 
-off_t _FAT_seek_r (struct _reent *r, int fd, off_t pos, int dir);
+off_t FAT_seek_r (struct _reent *r, int fd, off_t pos, int dir);
 
-int _FAT_fstat_r (struct _reent *r, int fd, struct stat *st);
+int FAT_fstat_r (struct _reent *r, int fd, struct stat *st);
 
-int _FAT_stat_r (struct _reent *r, const char *path, struct stat *st);
+int FAT_stat_r (struct _reent *r, PARTITION *partition, const char *path, struct stat *st);
 
-int _FAT_link_r (struct _reent *r, const char *existing, const char *newLink);
+int FAT_link_r (struct _reent *r, PARTITION *partition, const char *existing, const char *newLink);
 
-int _FAT_unlink_r (struct _reent *r, const char *name);
+int FAT_unlink_r (struct _reent *r, PARTITION *partition, const char *name);
 
-int _FAT_chdir_r (struct _reent *r, const char *name);
+int FAT_chdir_r (struct _reent *r, PARTITION *partition, const char *name);
 
-int _FAT_rename_r (struct _reent *r, const char *oldName, const char *newName);
+int FAT_rename_r (struct _reent *r, PARTITION *partition, const char *oldName, const char *newName);
 
-int _FAT_ftruncate_r (struct _reent *r, int fd, off_t len);
+int FAT_ftruncate_r (struct _reent *r, int fd, off_t len);
 
-int _FAT_fsync_r (struct _reent *r, int fd);
+int FAT_fsync_r (struct _reent *r, int fd);
 
 /*
 Synchronizes the file data to disc.
 Does no locking of its own -- lock the partition before calling.
 Returns 0 on success, an error code on failure.
 */
-extern int _FAT_syncToDisc (FILE_STRUCT* file);
+extern int FAT_syncToDisc (FILE_STRUCT* file);
 
 #endif // _FATFILE_H

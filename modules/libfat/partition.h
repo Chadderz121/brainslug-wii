@@ -77,13 +77,13 @@ typedef struct PARTITION_t {
 /*
 Mount the supplied device and return a pointer to the struct necessary to use it
 */
-PARTITION* _FAT_partition_constructor (const DISC_INTERFACE* disc, uint32_t cacheSize, uint32_t SectorsPerPage, sec_t startSector);
+PARTITION* FAT_partition_constructor (const DISC_INTERFACE* disc, PARTITION *partition, uint8_t *cacheSpace, uint32_t cacheSize, uint32_t SectorsPerPage, sec_t startSector);
 
 /*
 Dismount the device and free all structures used.
 Will also attempt to synchronise all open files to disc.
 */
-void _FAT_partition_destructor (PARTITION* partition);
+void FAT_partition_destructor (PARTITION* partition);
 
 /*
 Create the fs info sector.

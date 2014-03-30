@@ -62,7 +62,7 @@ bool _FAT_findEntry(PARTITION *partition, const char *path, DIR_ENTRY *dirEntry)
 
 int	FAT_getAttr(PARTITION *partition, const char *file) {
 	DIR_ENTRY dirEntry;
-	if (!_FAT_findEntry(file,&dirEntry)) return -1;
+	if (!_FAT_findEntry(partition,file,&dirEntry)) return -1;
 	 
 	return dirEntry.entryData[DIR_ENTRY_attributes];
 }
@@ -116,7 +116,7 @@ int FAT_setAttr(PARTITION *partition, const char *file, int attr) {
 }
 
 
-int _FAT_open_r (struct _reent *r, void *fileStruct, PARTITION *partition, const char *path, int flags, int mode) {
+int FAT_open_r (struct _reent *r, void *fileStruct, PARTITION *partition, const char *path, int flags, int mode) {
 	bool fileExists;
 	DIR_ENTRY dirEntry;
 	const char* pathEnd;
@@ -323,7 +323,7 @@ Synchronizes the file data to disc.
 Does no locking of its own -- lock the partition before calling.
 Returns 0 on success, an error code on failure.
 */
-int _FAT_syncToDisc (FILE_STRUCT* file) {
+int FAT_syncToDisc (FILE_STRUCT* file) {
 	uint8_t dirEntryData[DIR_ENTRY_DATA_SIZE];
 
 	if (!file || !file->inUse) {
@@ -371,7 +371,7 @@ int _FAT_syncToDisc (FILE_STRUCT* file) {
 }
 
 
-int _FAT_close_r (struct _reent *r, int fd) {
+int FAT_close_r (struct _reent *r, int fd) {
 	FILE_STRUCT* file = (FILE_STRUCT*)  fd;
 	int ret = 0;
 
@@ -383,7 +383,7 @@ int _FAT_close_r (struct _reent *r, int fd) {
 	_FAT_lock(&file->partition->lock);
 
 	if (file->write) {
-		ret = _FAT_syncToDisc (file);
+		ret = FAT_syncToDisc (file);
 		if (ret != 0) {
 			r->_errno = ret;
 			ret = -1;
@@ -408,7 +408,7 @@ int _FAT_close_r (struct _reent *r, int fd) {
 	return ret;
 }
 
-ssize_t _FAT_read_r (struct _reent *r, int fd, char *ptr, size_t len) {
+ssize_t FAT_read_r (struct _reent *r, int fd, char *ptr, size_t len) {
 	FILE_STRUCT* file = (FILE_STRUCT*)  fd;
 	PARTITION* partition;
 	CACHE* cache;
@@ -624,8 +624,6 @@ static bool _FAT_file_extend_r (struct _reent *r, FILE_STRUCT* file) {
 	PARTITION* partition = file->partition;
 	CACHE* cache = file->partition->cache;
 	FILE_POSITION position;
-	uint8_t zeroBuffer [partition->bytesPerSector];
-	memset(zeroBuffer, 0, partition->bytesPerSector);
 	uint32_t remain;
 	uint32_t tempNextCluster;
 	unsigned int sector;
@@ -633,7 +631,7 @@ static bool _FAT_file_extend_r (struct _reent *r, FILE_STRUCT* file) {
 	position.byte = file->filesize % partition->bytesPerSector;
 	position.sector = (file->filesize % partition->bytesPerCluster) / partition->bytesPerSector;
 	// It is assumed that there is always a startCluster
-	// This will be true when _FAT_file_extend_r is called from _FAT_write_r
+	// This will be true when _FAT_file_extend_r is called from FAT_write_r
 	position.cluster = _FAT_fat_lastCluster (partition, file->startCluster);
 
 	remain = file->currentPosition - file->filesize;
@@ -652,12 +650,12 @@ static bool _FAT_file_extend_r (struct _reent *r, FILE_STRUCT* file) {
 
 	if (remain + position.byte < partition->bytesPerSector) {
 		// Only need to clear to the end of the sector
-		_FAT_cache_writePartialSector (cache, zeroBuffer,
+		_FAT_cache_writePartialSector (cache, NULL,
 			_FAT_fat_clusterToSector (partition, position.cluster) + position.sector, position.byte, remain);
 		position.byte += remain;
 	} else {
 		if (position.byte > 0) {
-			_FAT_cache_writePartialSector (cache, zeroBuffer,
+			_FAT_cache_writePartialSector (cache, NULL,
 				_FAT_fat_clusterToSector (partition, position.cluster) + position.sector, position.byte,
 				partition->bytesPerSector - position.byte);
 			remain -= (partition->bytesPerSector - position.byte);
@@ -679,7 +677,7 @@ static bool _FAT_file_extend_r (struct _reent *r, FILE_STRUCT* file) {
 			}
 
 			sector = _FAT_fat_clusterToSector (partition, position.cluster) + position.sector;
-			_FAT_cache_writeSectors (cache, sector, 1, zeroBuffer);
+			_FAT_cache_writeSectors (cache, sector, 1, NULL);
 
 			remain -= partition->bytesPerSector;
 			position.sector ++;
@@ -691,7 +689,7 @@ static bool _FAT_file_extend_r (struct _reent *r, FILE_STRUCT* file) {
 		}
 
 		if (remain > 0) {
-			_FAT_cache_writePartialSector (cache, zeroBuffer,
+			_FAT_cache_writePartialSector (cache, NULL,
 				_FAT_fat_clusterToSector (partition, position.cluster) + position.sector, 0, remain);
 			position.byte = remain;
 		}
@@ -702,7 +700,7 @@ static bool _FAT_file_extend_r (struct _reent *r, FILE_STRUCT* file) {
 	return true;
 }
 
-ssize_t _FAT_write_r (struct _reent *r, int fd, const char *ptr, size_t len) {
+ssize_t FAT_write_r (struct _reent *r, int fd, const char *ptr, size_t len) {
 	FILE_STRUCT* file = (FILE_STRUCT*)  fd;
 	PARTITION* partition;
 	CACHE* cache;
@@ -930,7 +928,7 @@ ssize_t _FAT_write_r (struct _reent *r, int fd, const char *ptr, size_t len) {
 }
 
 
-off_t _FAT_seek_r (struct _reent *r, int fd, off_t pos, int dir) {
+off_t FAT_seek_r (struct _reent *r, int fd, off_t pos, int dir) {
 	FILE_STRUCT* file = (FILE_STRUCT*)  fd;
 	PARTITION* partition;
 	uint32_t cluster, nextCluster;
@@ -1032,7 +1030,7 @@ off_t _FAT_seek_r (struct _reent *r, int fd, off_t pos, int dir) {
 
 
 
-int _FAT_fstat_r (struct _reent *r, int fd, struct stat *st) {
+int FAT_fstat_r (struct _reent *r, int fd, struct stat *st) {
 	FILE_STRUCT* file = (FILE_STRUCT*)  fd;
 	PARTITION* partition;
 	DIR_ENTRY fileEntry;
@@ -1067,7 +1065,7 @@ int _FAT_fstat_r (struct _reent *r, int fd, struct stat *st) {
 	return 0;
 }
 
-int _FAT_ftruncate_r (struct _reent *r, int fd, off_t len) {
+int FAT_ftruncate_r (struct _reent *r, int fd, off_t len) {
 	FILE_STRUCT* file = (FILE_STRUCT*)  fd;
 	PARTITION* partition;
 	int ret=0;
@@ -1179,7 +1177,7 @@ int _FAT_ftruncate_r (struct _reent *r, int fd, off_t len) {
 	return ret;
 }
 
-int _FAT_fsync_r (struct _reent *r, int fd) {
+int FAT_fsync_r (struct _reent *r, int fd) {
 	FILE_STRUCT* file = (FILE_STRUCT*)  fd;
 	int ret = 0;
 
@@ -1190,7 +1188,7 @@ int _FAT_fsync_r (struct _reent *r, int fd) {
 
 	_FAT_lock(&file->partition->lock);
 
-	ret = _FAT_syncToDisc (file);
+	ret = FAT_syncToDisc (file);
 	if (ret != 0) {
 		r->_errno = ret;
 		ret = -1;
