@@ -33,6 +33,12 @@
  *  - ctime
  *  - strftime
  */
+/* Nontstandard functions provided in this file:
+ * - localtime_r
+ * - gmtime_r
+ *
+ * The implementation of gmtime is to return localtime in all cases.
+ */
 
 #include <rvl/OSTime.h>
 #include <stddef.h>
@@ -121,5 +127,21 @@ static inline struct tm *localtime(const time_t *timer) {
 }
 #define gmtime localtime
 
+static inline struct tm *localtime_r(const time_t *timer, struct tm *date) {
+    OSCalendarTime_t ct;
+    
+    OSTicksToCalendarTime(*timer, &ct);
+    date->tm_sec = ct.tm_sec;
+    date->tm_min = ct.tm_min;
+    date->tm_hour = ct.tm_hour;
+    date->tm_mday = ct.tm_mday;
+    date->tm_mon = ct.tm_mon;
+    date->tm_year = ct.tm_year;
+    date->tm_wday = ct.tm_wday;
+    date->tm_yday = ct.tm_yday;
+    date->tm_isdst = 0;
+    return date;
+}
+#define gmtime_r localtime_r
 
 #endif /* _TIME_H_ */
