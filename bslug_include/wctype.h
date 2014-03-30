@@ -28,6 +28,14 @@
 #ifndef _WCTYPE_H_
 #define _WCTYPE_H_
 
+#include <ctype.h>
+
+/* these methods are locale-specific. Therefore it's acceptable to implement it
+ * identically to the ASCII character versions (provided they're well behaved).
+ */
+#define towlower tolower
+#define towupper toupper
+
 /* these symbols are part of the libc module instead */
 
 #endif /* _WCTYPE_H_ */
