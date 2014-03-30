@@ -76,6 +76,7 @@ LD1FLAGS += --relocatable -s \
 # -mcpu=750: enable processor specific compilation
 # -meabi: enable eabi specific compilation
 # -mhard-float: enable hardware floating point instructions
+# -fshort-wchar: use 16 bit whcar_t type in keeping with Wii executables
 # -msdata-none: do not use r2 or r13 as small data areas
 # -memb: enable embedded application specific compilation
 # -ffunction-sections: split up functions so linker can garbage collect
@@ -83,7 +84,7 @@ LD1FLAGS += --relocatable -s \
 CFLAGS   += -O2 -Wall -x c -std=gnu99 \
 			-nostdinc -ffreestanding \
             -DGEKKO -DHW_RVL -D__wii__ \
-            -mrvl -mcpu=750 -meabi -mhard-float \
+            -mrvl -mcpu=750 -meabi -mhard-float -fshort-wchar \
             -msdata=none -memb -ffunction-sections -fdata-sections
 
 ifdef DEBUG

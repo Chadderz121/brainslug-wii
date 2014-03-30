@@ -1,9 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Symbols in the standard ctype.h header -->
 <symbols>
-    <symbol name="tolower" size="0x38" offset="0x0" >
+    <!-- the __ctype array appears twice in most programs! One is __wctype but
+         since they're identical, that isn't useful. Thus we rely on order
+         (sadly). -->
+    <symbol name="__ctype" size="0x200" offset="0x258" >
         <data>
-            2C030000 38000000 4180000C
+            78797A5B 5C5D5E5F 60616263
+        </data>
+    </symbol>
+    <symbol name="__lcase" size="0x100" offset="0x58" >
+        <data>
+            78797A5B 5C5D5E5F 60616263
+        </data>
+    </symbol>
+    <symbol name="__ucase" size="0x100" offset="0x58" >
+        <data>
+            58595A5B 5C5D5E5F 60414243
         </data>
     </symbol>
 </symbols>
