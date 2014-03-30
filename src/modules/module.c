@@ -47,6 +47,7 @@
 #include "threads.h"
 
 typedef struct {
+    size_t module;
     const char *name;
     void *address;
     size_t offset;
@@ -94,7 +95,7 @@ static void Module_LoadElf(const char *path, Elf *elf);
 static bool Module_LoadElfSymtab(
     Elf *elf, Elf32_Sym **symtab, size_t *symtab_count, size_t *symtab_strndx);
 static module_metadata_t *Module_MetadataRead(
-    const char *path, Elf *elf, 
+    const char *path, size_t index, Elf *elf, 
     Elf32_Sym *symtab, size_t symtab_count, size_t symtab_strndx);
 static bool Module_ElfLoadSection(
     const Elf *elf, Elf_Scn *scn, const Elf32_Shdr *shdr, void *destination);
@@ -102,7 +103,7 @@ static void Module_ElfLoadSymbols(
     size_t shndx, const const void *destination, 
     Elf32_Sym *symtab, size_t symtab_count);
 static bool Module_ElfLink(
-    Elf *elf, size_t shndx, void *destination,
+    size_t index, Elf *elf, size_t shndx, void *destination,
     Elf32_Sym *symtab, size_t symtab_count, size_t symtab_strndx,
     bool allow_globals);
 static bool Module_ElfLinkOne(
@@ -110,13 +111,15 @@ static bool Module_ElfLinkOne(
     uint32_t symbol_addr);
     
 static bool Module_ListLink(uint8_t **space);
-static bool Module_LinkModule(const char *path, uint8_t **space);
-static bool Module_LinkModuleElf(Elf *elf, uint8_t **space);
+static bool Module_LinkModule(size_t index, const char *path, uint8_t **space);
+static bool Module_LinkModuleElf(size_t index, Elf *elf, uint8_t **space);
 
 static bool Module_ListLoadSymbols(uint8_t **space);
 
-static bool Module_ListLinkFinal(void);
-
+static bool Module_ListLinkFinal(uint8_t **space);
+static bool Module_ListLinkFinalReplaceFunction(
+        uint8_t **space, bslug_loader_entry_t *entry);
+        
 bool Module_Init(void) {
     return
         Event_Init(&module_event_list_loaded) &&
@@ -161,10 +164,10 @@ static void *Module_Main(void *arg) {
     if (!Module_ListLoadSymbols(&space))
         goto exit_error;
     
-    assert(space > (uint8_t *)0x81800000 - module_list_size);
-    
-    if (!Module_ListLinkFinal())
+    if (!Module_ListLinkFinal(&space))
         goto exit_error;
+    
+    assert(space > (uint8_t *)0x81800000 - module_list_size);
     
     DCFlushRange(space, 0x81800000 - (uint32_t)space);
 
@@ -426,7 +429,7 @@ static void Module_LoadElf(const char *path, Elf *elf) {
     assert(symtab != NULL);
         
     metadata = Module_MetadataRead(
-        path, elf, symtab, symtab_count, symtab_strndx);
+        path, module_list_count, elf, symtab, symtab_count, symtab_strndx);
     
     if (metadata == NULL) /* error reporting done inside method */
         goto exit_error;
@@ -561,19 +564,21 @@ exit_error:
 }
 
 static module_metadata_t *Module_MetadataRead(
-        const char *path, Elf *elf,
+        const char *path, size_t index, Elf *elf,
         Elf32_Sym *symtab, size_t symtab_count, size_t symtab_strndx) {
     char *metadata = NULL, *metadata_cur, *metadata_end, *tmp;
     const char *game, *name, *author, *version, *license, *bslug;
     module_metadata_t *ret = NULL;
     Elf_Scn *scn;
-    size_t shstrndx;
+    size_t shstrndx, entries_count;
     
     if (elf_getshdrstrndx(elf, &shstrndx) != 0) {
         printf("Warning: Ignoring %s - Couldn't find shstrndx\n", path);
         module_has_info = true;
         goto exit_error;
     }
+    
+    entries_count = 0;
     
     for (scn = elf_nextscn(elf, NULL);
          scn != NULL;
@@ -594,7 +599,8 @@ static module_metadata_t *Module_MetadataRead(
             if (shdr->sh_size == 0)
                 continue;
             
-            assert(metadata == NULL);
+            if (metadata != NULL)
+                continue;
             metadata = malloc(shdr->sh_size);
             if (metadata == NULL)
                 continue;
@@ -611,7 +617,7 @@ static module_metadata_t *Module_MetadataRead(
                 elf_ndxscn(scn), metadata, symtab, symtab_count);
             
             if (!Module_ElfLink(
-                    elf, elf_ndxscn(scn), metadata,
+                    index, elf, elf_ndxscn(scn), metadata,
                     symtab, symtab_count, symtab_strndx, false)) {
                 printf(
                     "Warning: Ignoring %s - .bslug.meta contains invalid "
@@ -622,7 +628,8 @@ static module_metadata_t *Module_MetadataRead(
             
             metadata_end = metadata + shdr->sh_size;
             metadata_end[-1] = '\0';
-            break;
+        } else if (strcmp(name, ".bslug.load") == 0) {
+            entries_count = shdr->sh_size / sizeof(bslug_loader_entry_t);
         }
     }
 
@@ -776,6 +783,7 @@ static module_metadata_t *Module_MetadataRead(
     strcpy(tmp, license);
     ret->license = tmp;
     ret->size = 0;
+    ret->entries_count = entries_count;
     
 exit_error:
     if (metadata != NULL)
@@ -831,7 +839,7 @@ static void Module_ElfLoadSymbols(
 }
 
 static bool Module_ElfLink(
-        Elf *elf, size_t shndx, void *destination,
+        size_t index, Elf *elf, size_t shndx, void *destination,
         Elf32_Sym *symtab, size_t symtab_count, size_t symtab_strndx,
         bool allow_globals) {
     Elf_Scn *scn;
@@ -904,6 +912,7 @@ static bool Module_ElfLink(
                                     return false;
                                 }
                                 
+                                reloc->module = index;
                                 reloc->address = destination;
                                 reloc->offset = rel[i].r_offset;
                                 reloc->type = ELF32_R_TYPE(rel[i].r_info);
@@ -987,6 +996,7 @@ static bool Module_ElfLink(
                                     return false;
                                 }
                                 
+                                reloc->module = index;
                                 reloc->address = destination;
                                 reloc->offset = rela[i].r_offset;
                                 reloc->type = ELF32_R_TYPE(rela[i].r_info);
@@ -1132,7 +1142,7 @@ static bool Module_ListLink(uint8_t **space) {
     bool result = false;
     
     for (i = 0; i < module_list_count; i++) {
-        if (!Module_LinkModule(module_list[i]->path, space))
+        if (!Module_LinkModule(i, module_list[i]->path, space))
             goto exit_error;
     }
     
@@ -1142,7 +1152,7 @@ exit_error:
     return result;
 }
 
-static bool Module_LinkModule(const char *path, uint8_t **space) {
+static bool Module_LinkModule(size_t index, const char *path, uint8_t **space) {
     int fd = -1;
     Elf *elf = NULL;
     bool result = false;
@@ -1165,7 +1175,7 @@ static bool Module_LinkModule(const char *path, uint8_t **space) {
             /* TODO */
             goto exit_error;
         case ELF_K_ELF:
-            if (!Module_LinkModuleElf(elf, space))
+            if (!Module_LinkModuleElf(index, elf, space))
                 goto exit_error;
             break;
         default:
@@ -1182,14 +1192,14 @@ exit_error:
     return result;
 }
 
-static bool Module_LinkModuleElf(Elf *elf, uint8_t **space) {
+static bool Module_LinkModuleElf(size_t index, Elf *elf, uint8_t **space) {
     Elf_Scn *scn;
     size_t symtab_count, section_count, shstrndx, symtab_strndx, entries_count;
     Elf32_Sym *symtab = NULL;
     uint8_t **destinations = NULL;
     bslug_loader_entry_t *entries = NULL;
     bool result = false;
-        
+    
     if (!Module_LoadElfSymtab(elf, &symtab, &symtab_count, &symtab_strndx))
         goto exit_error;
     
@@ -1280,7 +1290,7 @@ static bool Module_LinkModuleElf(Elf *elf, uint8_t **space) {
             destinations[elf_ndxscn(scn)] != NULL) {
             
             if (!Module_ElfLink(
-                    elf, elf_ndxscn(scn), destinations[elf_ndxscn(scn)],
+                    index, elf, elf_ndxscn(scn), destinations[elf_ndxscn(scn)],
                     symtab, symtab_count, symtab_strndx, true))
                 goto exit_error;
         }
@@ -1316,101 +1326,6 @@ static bool Module_ListLoadSymbols(uint8_t **space) {
             break;
         } case BSLUG_LOADER_ENTRY_FUNCTION:
         case BSLUG_LOADER_ENTRY_FUNCTION_MANDATORY: {
-            uint32_t *data;
-            
-            assert(entry->data.function.name != NULL);
-            data = Search_SymbolLookup(entry->data.function.name);
-            
-            if (data == NULL) {
-                if (entry->type == BSLUG_LOADER_ENTRY_FUNCTION) {
-                    *space -= 4;
-                    /* FIXME: this behaviour is bad; we should call abort or
-                     * some such.
-                     *
-                     * The hack is, if we're replacing a function, we probably
-                     * reference it. Since the symbol is missing, this won't
-                     * work, so we make up a plausible symbol table entry for
-                     * the purpose of relocation.
-                     */
-                    ((uint32_t *)*space)[0] = 0x48000000; /* spin loop */
-                    Search_SymbolAdd(entry->data.function.name, *space);
-                    continue;
-                } else {
-                    printf("Missing symbol %s\n", entry->data.function.name);
-                    goto exit_error;
-                }
-            }
-            
-            switch (*data & 0xfc000002) {
-                case 0x40000000: { /* bc */
-                    void *target;
-                    int offset;
-                                        
-                    offset = *data & 0x0000fffc;
-                    offset = (offset << 16) >> 16;
-                    target = (char *)data + offset;
-                
-                    *space -= 12;
-                    /* Conditional branch to either target or next instruction.
-                     * We can't just conditional branch to original target as
-                     * it is probably too far for a single branch. */
-                    ((uint32_t *)*space)[0] = (*data & 0xffff0003) | 8;
-                    /* branch to second instruction of function.
-                     * observe: we're branching from the second instruction of 
-                     *     the stub to the second instruction of the method, so
-                     *     no offset is needed. */
-                    ((uint32_t *)*space)[1] =
-                        0x48000000 + 
-                        (((uint32_t)data - (uint32_t)*space) & 0x3fffffc);
-                    /* branch to the target of the original branch. */
-                    ((uint32_t *)*space)[2] =
-                        0x48000000 + 
-                        (((uint32_t)target - (uint32_t)(*space + 8))
-                            & 0x3fffffc);
-                    break;
-                } case 0x48000000: { /* b */
-                    void *target;
-                    int offset;
-                    
-                    offset = *data & 0x03fffffc;
-                    offset = (offset << 6) >> 6;
-                    target = (char *)data + offset;
-                    *space -= 8;
-                    /* branch to the target of the original branch. */
-                    ((uint32_t *)*space)[0] = 
-                        (*data & 0xfc000003) + 
-                        (((uint32_t)target - (uint32_t)*space) & 0x3fffffc);
-                    /* branch to second instruction of function.
-                     * observe: we're branching from the second instruction of 
-                     *     the stub to the second instruction of the method, so
-                     *     no offset is needed. */
-                    ((uint32_t *)*space)[1] =
-                        0x48000000 + 
-                        (((uint32_t)data - (uint32_t)*space) & 0x3fffffc);
-                    break;
-                } default: { /* other (inc ba, and bca) */
-                    *space -= 8;
-                    /* copy the original instruction. */
-                    ((uint32_t *)*space)[0] = *data;
-                    /* branch to second instruction of function.
-                     * observe: we're branching from the second instruction of 
-                     *     the stub to the second instruction of the method, so
-                     *     no offset is needed. */
-                    ((uint32_t *)*space)[1] =
-                        0x48000000 + 
-                        (((uint32_t)data - (uint32_t)*space) & 0x3fffffc);
-                    break;
-                }
-            }
-            
-            *data = 0x48000000 + 
-                (((uint32_t)entry->data.function.target
-                    - (uint32_t)data) & 0x3fffffc);
-            DCFlushRange((void *)((uint32_t)data & ~31), 32);
-            ICInvalidateRange((void *)((uint32_t)data & ~31), 32);
-            
-            if (!Search_SymbolReplace(entry->data.function.name, *space))
-                goto exit_error;
             break;
         } default:
             goto exit_error;
@@ -1420,35 +1335,72 @@ static bool Module_ListLoadSymbols(uint8_t **space) {
     result = true;
 exit_error:
     if (!result) printf("Module_ListLoadSymbols: exit_error\n");
-    module_entries_count = 0;
-    module_entries_capacity = 0;
-    free(module_entries);
     return result;
 }
 
-static bool Module_ListLinkFinal(void) {
-    size_t i;
+static bool Module_ListLinkFinal(uint8_t **space) {
+    size_t relocation_index, entry_index, module_index;
     bool result = false;
     
-    for (i = 0; i < module_relocations_count; i++) {
-        module_unresolved_relocation_t *reloc;
-        void *symbol;
+    relocation_index = 0;
+    entry_index = 0;
+    
+    /* Process the replacements the link each module in turn.
+     * It must be done in this order, otherwise two replacements to the same
+     * function will cause an infinite loop. */
+    for (module_index = 0; module_index < module_list_count; module_index++) {
+        size_t limit;
         
-        reloc = module_relocations + i;
+        limit = entry_index + module_list[module_index]->entries_count;
         
-        assert(reloc->name != NULL);
-        symbol = Search_SymbolLookup(reloc->name);
-        
-        if (symbol == NULL) {
-            printf("Missing symbol %s\n", reloc->name);
-            goto exit_error;
+        for (; entry_index < limit; entry_index++) {
+            bslug_loader_entry_t *entry;
+            
+            assert(entry_index < module_entries_count);
+
+            entry = module_entries + entry_index;
+                
+            switch (entry->type) {
+            case BSLUG_LOADER_ENTRY_EXPORT: {
+                break;
+            } case BSLUG_LOADER_ENTRY_FUNCTION:
+            case BSLUG_LOADER_ENTRY_FUNCTION_MANDATORY: {
+                if (!Module_ListLinkFinalReplaceFunction(space, entry))
+                    goto exit_error;
+                break;
+            } default:
+                goto exit_error;
+            }
         }
-        
-        if (!Module_ElfLinkOne(
-                reloc->type, reloc->offset, reloc->addend,
-                reloc->address, (uint32_t)symbol))
-            goto exit_error;
+    
+        for (; 
+             relocation_index < module_relocations_count;
+             relocation_index++) {
+            module_unresolved_relocation_t *reloc;
+            void *symbol;
+            
+            reloc = module_relocations + relocation_index;
+            
+            if (reloc->module != module_index)
+                break;
+            
+            assert(reloc->name != NULL);
+            symbol = Search_SymbolLookup(reloc->name);
+            
+            if (symbol == NULL) {
+                printf("Missing symbol %s\n", reloc->name);
+                goto exit_error;
+            }
+            
+            if (!Module_ElfLinkOne(
+                    reloc->type, reloc->offset, reloc->addend,
+                    reloc->address, (uint32_t)symbol))
+                goto exit_error;
+        }
     }
+    
+    assert(entry_index == module_entries_count);
+    assert(relocation_index == module_relocations_count);
     
     result = true;
 exit_error:
@@ -1456,5 +1408,113 @@ exit_error:
     module_relocations_count = 0;
     module_relocations_capacity = 0;
     free(module_relocations);
+    return result;
+}
+
+static bool Module_ListLinkFinalReplaceFunction(
+        uint8_t **space, bslug_loader_entry_t *entry) {
+    bool result = false;
+    uint32_t *data;
+    
+    assert(entry->type == BSLUG_LOADER_ENTRY_FUNCTION ||
+           entry->type == BSLUG_LOADER_ENTRY_FUNCTION_MANDATORY);
+    assert(entry->data.function.name != NULL);
+    data = Search_SymbolLookup(entry->data.function.name);
+    
+    if (data == NULL) {
+        if (entry->type == BSLUG_LOADER_ENTRY_FUNCTION) {
+            *space -= 4;
+            /* FIXME: this behaviour is bad; we should call abort or
+             * some such.
+             *
+             * The hack is, if we're replacing a function, we probably
+             * reference it. Since the symbol is missing, this won't
+             * work, so we make up a plausible symbol table entry for
+             * the purpose of relocation.
+             */
+            ((uint32_t *)*space)[0] = 0x48000000; /* spin loop */
+            Search_SymbolAdd(entry->data.function.name, *space);
+            goto exit_success;
+        } else {
+            printf("Missing symbol %s\n", entry->data.function.name);
+            goto exit_error;
+        }
+    }
+    
+    switch (*data & 0xfc000002) {
+        case 0x40000000: { /* bc */
+            void *target;
+            int offset;
+                                
+            offset = *data & 0x0000fffc;
+            offset = (offset << 16) >> 16;
+            target = (char *)data + offset;
+        
+            *space -= 12;
+            /* Conditional branch to either target or next instruction.
+             * We can't just conditional branch to original target as
+             * it is probably too far for a single branch. */
+            ((uint32_t *)*space)[0] = (*data & 0xffff0003) | 8;
+            /* branch to second instruction of function.
+             * observe: we're branching from the second instruction of 
+             *     the stub to the second instruction of the method, so
+             *     no offset is needed. */
+            ((uint32_t *)*space)[1] =
+                0x48000000 + 
+                (((uint32_t)data - (uint32_t)*space) & 0x3fffffc);
+            /* branch to the target of the original branch. */
+            ((uint32_t *)*space)[2] =
+                0x48000000 + 
+                (((uint32_t)target - (uint32_t)(*space + 8))
+                    & 0x3fffffc);
+            break;
+        } case 0x48000000: { /* b */
+            void *target;
+            int offset;
+            
+            offset = *data & 0x03fffffc;
+            offset = (offset << 6) >> 6;
+            target = (char *)data + offset;
+            *space -= 8;
+            /* branch to the target of the original branch. */
+            ((uint32_t *)*space)[0] = 
+                (*data & 0xfc000003) + 
+                (((uint32_t)target - (uint32_t)*space) & 0x3fffffc);
+            /* branch to second instruction of function.
+             * observe: we're branching from the second instruction of 
+             *     the stub to the second instruction of the method, so
+             *     no offset is needed. */
+            ((uint32_t *)*space)[1] =
+                0x48000000 + 
+                (((uint32_t)data - (uint32_t)*space) & 0x3fffffc);
+            break;
+        } default: { /* other (inc ba, and bca) */
+            *space -= 8;
+            /* copy the original instruction. */
+            ((uint32_t *)*space)[0] = *data;
+            /* branch to second instruction of function.
+             * observe: we're branching from the second instruction of 
+             *     the stub to the second instruction of the method, so
+             *     no offset is needed. */
+            ((uint32_t *)*space)[1] =
+                0x48000000 + 
+                (((uint32_t)data - (uint32_t)*space) & 0x3fffffc);
+            break;
+        }
+    }
+    
+    *data = 0x48000000 + 
+        (((uint32_t)entry->data.function.target
+            - (uint32_t)data) & 0x3fffffc);
+    DCFlushRange((void *)((uint32_t)data & ~31), 32);
+    ICInvalidateRange((void *)((uint32_t)data & ~31), 32);
+    
+    if (!Search_SymbolReplace(entry->data.function.name, *space))
+        goto exit_error;
+
+exit_success:
+    result = true;
+exit_error:
+    if (!result) printf("Module_ListLinkFinalReplaceFunction: exit_error\n");
     return result;
 }

@@ -54,7 +54,9 @@ syntax is:
     BSLUG_REPLACE(game_function, replacement);
 The only difference between the two is that if the function cannot be found in
 the game, it is skipped for BSLUG_REPLACE but the whole module fails to load
-with an error message displayed to the user for BSLUG_MUST_REPLACE.
+with an error message displayed to the user for BSLUG_MUST_REPLACE. Each module
+can only replace any given game function once, but multiple modules can replace
+the same function.
 
 The idea of the BrainSlug replacement system is to allow you to extend game
 functionality by intercepting method calls. For example, you could intercept
@@ -70,6 +72,12 @@ a wrapper can be something like:
         return result;
     }
     BSLUG_REPLACE(IOS_Open, myIOS_Open);
+    
+If multiple modules replace the same method, then one of them will be made to
+call the other's replacement if it attempts to call the original method. So if
+two modules both included the above code, the logging message would be displayed
+twice. The order of these calls is dependant on the order of loading by the
+loader, so should not be relied upon.
 
 The unfortunate thing about this environment is you can only replace or call
 game functions for which BrainSlug symbol information is available. The symbols

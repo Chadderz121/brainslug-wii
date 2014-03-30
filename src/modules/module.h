@@ -38,6 +38,7 @@ typedef struct {
     const char *version;
     const char *license;
     size_t size;
+    size_t entries_count;
 } module_metadata_t;
 
 extern event_t module_event_list_loaded;
