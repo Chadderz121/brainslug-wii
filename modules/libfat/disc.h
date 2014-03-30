@@ -3,6 +3,7 @@
  Interface to the low level disc functions. Used by the higher level
  file system code.
  
+ Edited 2014 by Alex Chadwick for inclusion in bslug
  Copyright (c) 2006 Michael "Chishm" Chisholm
 	
  Redistribution and use in source and binary forms, with or without modification,
@@ -39,7 +40,6 @@ typedef struct {
 	const char* name; 
 	const DISC_INTERFACE* (*getInterface)(void);
 } INTERFACE_ID;
-extern const INTERFACE_ID _FAT_disc_interfaces[];
 
 /*
 Check if a disc is inserted

@@ -2,6 +2,7 @@
  common.h
  Common definitions and included files for the FATlib
 
+ Edited 2014 by Alex Chadwick for inclusion in bslug
  Copyright (c) 2006 Michael "Chishm" Chisholm
 
  Redistribution and use in source and binary forms, with or without modification,
@@ -29,50 +30,15 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
-#include <fat.h>
+#include <io/fat.h>
 #include <stddef.h>
 #include <stdint.h>
 
-// When compiling for NDS, make sure NDS is defined
-#ifndef NDS
- #if defined ARM9 || defined ARM7
-  #define NDS
- #endif
-#endif
-
 // Platform specific includes
-#if defined(__gamecube__) || defined (__wii__)
-   #include <gctypes.h>
-   #include <ogc/disc_io.h>
-   #include <gccore.h>
-#elif defined(NDS)
-   #include <nds/ndstypes.h>
-   #include <nds/system.h>
-   #include <nds/disc_io.h>
-#elif defined(GBA)
-   #include <gba_types.h>
-   #include <disc_io.h>
-#endif
+#include <io/disc_io.h>
 
 // Platform specific options
-#if   defined (__wii__)
-   #define DEFAULT_CACHE_PAGES 4
-   #define DEFAULT_SECTORS_PAGE 64
-   #define USE_LWP_LOCK
-   #define USE_RTC_TIME
-#elif defined (__gamecube__)
-   #define DEFAULT_CACHE_PAGES 4
-   #define DEFAULT_SECTORS_PAGE 64
-   #define USE_LWP_LOCK
-   #define USE_RTC_TIME
-#elif defined (NDS)
-   #define DEFAULT_CACHE_PAGES 16
-   #define DEFAULT_SECTORS_PAGE 8
-   #define USE_RTC_TIME
-#elif defined (GBA)
-   #define DEFAULT_CACHE_PAGES 2
-   #define DEFAULT_SECTORS_PAGE 8
-   #define LIMIT_SECTORS 128
-#endif
+#define DEFAULT_CACHE_PAGES 4
+#define DEFAULT_SECTORS_PAGE 64
 
 #endif // _COMMON_H

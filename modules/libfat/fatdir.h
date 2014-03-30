@@ -4,6 +4,7 @@
  Functions used by the newlib disc stubs to interface with 
  this library
 
+ Edited 2014 by Alex Chadwick for inclusion in bslug
  Copyright (c) 2006 Michael "Chishm" Chisholm
 	
  Redistribution and use in source and binary forms, with or without modification,
@@ -35,7 +36,7 @@
 #include <sys/reent.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
-#include <sys/iosupport.h>
+//#include <sys/iosupport.h>
 #include "common.h"
 #include "directory.h"
 
@@ -47,27 +48,27 @@ typedef struct {
 	bool       validEntry;
 } DIR_STATE_STRUCT;
 
-extern int _FAT_stat_r (struct _reent *r, const char *path, struct stat *st);
+extern int _FAT_stat_r (struct _reent *r, PARTITION *partition, const char *path, struct stat *st);
 
-extern int _FAT_link_r (struct _reent *r, const char *existing, const char *newLink);
+extern int _FAT_link_r (struct _reent *r, PARTITION *partition, const char *existing, const char *newLink);
 
-extern int _FAT_unlink_r (struct _reent *r, const char *name);
+extern int _FAT_unlink_r (struct _reent *r, PARTITION *partition, const char *name);
 
-extern int _FAT_chdir_r (struct _reent *r, const char *name);
+extern int _FAT_chdir_r (struct _reent *r, PARTITION *partition, const char *name);
 
-extern int _FAT_rename_r (struct _reent *r, const char *oldName, const char *newName);
+extern int _FAT_rename_r (struct _reent *r, PARTITION *partition, const char *oldName, const char *newName);
 
-extern int _FAT_mkdir_r (struct _reent *r, const char *path, int mode);
+extern int _FAT_mkdir_r (struct _reent *r, PARTITION *partition, const char *path, int mode);
 
-extern int _FAT_statvfs_r (struct _reent *r, const char *path, struct statvfs *buf);
+extern int _FAT_statvfs_r (struct _reent *r, PARTITION *partition, const char *path, struct statvfs *buf);
 
 /*
 Directory iterator functions
 */
-extern DIR_ITER* _FAT_diropen_r(struct _reent *r, DIR_ITER *dirState, const char *path);
-extern int _FAT_dirreset_r (struct _reent *r, DIR_ITER *dirState);
-extern int _FAT_dirnext_r (struct _reent *r, DIR_ITER *dirState, char *filename, struct stat *filestat);
-extern int _FAT_dirclose_r (struct _reent *r, DIR_ITER *dirState);
+extern DIR_STATE_STRUCT* _FAT_diropen_r(struct _reent *r, DIR_STATE_STRUCT *state, PARTITION *partition, const char *path);
+extern int _FAT_dirreset_r (struct _reent *r, DIR_STATE_STRUCT *state);
+extern int _FAT_dirnext_r (struct _reent *r, DIR_STATE_STRUCT *state, char *filename, struct stat *filestat);
+extern int _FAT_dirclose_r (struct _reent *r, DIR_STATE_STRUCT *state);
 
 
 #endif // _FATDIR_H

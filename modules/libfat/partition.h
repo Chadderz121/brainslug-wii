@@ -3,6 +3,7 @@
  Functions for mounting and dismounting partitions
  on various block devices.
 
+ Edited 2014 by Alex Chadwick for inclusion in bslug
  Copyright (c) 2006 Michael "Chishm" Chisholm
 
  Redistribution and use in source and binary forms, with or without modification,
@@ -49,7 +50,7 @@ typedef struct {
 	uint32_t numberLastAllocCluster;
 } FAT;
 
-typedef struct {
+typedef struct PARTITION_t {
 	const DISC_INTERFACE* disc;
 	CACHE*                cache;
 	// Info about the partition
@@ -83,11 +84,6 @@ Dismount the device and free all structures used.
 Will also attempt to synchronise all open files to disc.
 */
 void _FAT_partition_destructor (PARTITION* partition);
-
-/*
-Return the partition specified in a path, as taken from the devoptab.
-*/
-PARTITION* _FAT_partition_getPartitionFromPath (const char* path);
 
 /*
 Create the fs info sector.

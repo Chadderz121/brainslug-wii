@@ -2,6 +2,7 @@
 	libfat.c
 	Simple functionality for startup, mounting and unmounting of FAT-based devices.
 
+ Edited 2014 by Alex Chadwick for inclusion in bslug
  Copyright (c) 2006 Michael "Chishm" Chisholm
 
  Redistribution and use in source and binary forms, with or without modification,
@@ -26,8 +27,8 @@
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <sys/iosupport.h>
-#include <unistd.h>
+//#include <sys/iosupport.h>
+//#include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -36,7 +37,6 @@
 #include "fatfile.h"
 #include "fatdir.h"
 #include "lock.h"
-#include "mem_allocate.h"
 #include "disc.h"
 
 static const devoptab_t dotab_fat = {

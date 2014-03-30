@@ -3,6 +3,7 @@
  Functions for mounting and dismounting partitions
  on various block devices.
 
+ Edited 2014 by Alex Chadwick for inclusion in bslug
  Copyright (c) 2006 Michael "Chishm" Chisholm
 
  Redistribution and use in source and binary forms, with or without modification,
@@ -31,12 +32,10 @@
 #include "bit_ops.h"
 #include "file_allocation_table.h"
 #include "directory.h"
-#include "mem_allocate.h"
 #include "fatfile.h"
 
 #include <string.h>
 #include <ctype.h>
-#include <sys/iosupport.h>
 
 /*
 Data offsets
@@ -336,18 +335,6 @@ void _FAT_partition_destructor (PARTITION* partition) {
 	_FAT_mem_free (partition);
 }
 
-PARTITION* _FAT_partition_getPartitionFromPath (const char* path) {
-	const devoptab_t *devops;
-
-	devops = GetDeviceOpTab (path);
-
-	if (!devops) {
-		return NULL;
-	}
-
-	return (PARTITION*)devops->deviceData;
-}
-
 void _FAT_partition_createFSinfo(PARTITION * partition)
 {
 	if(partition->readOnly || partition->filesysType != FS_FAT32)
@@ -428,14 +415,4 @@ void _FAT_partition_writeFSinfo(PARTITION * partition)
 	// Write first sector of disc
 	_FAT_disc_writeSectors (partition->disc, partition->fsInfoSector, 1, sectorBuffer);
 	_FAT_mem_free(sectorBuffer);
-}
-
-uint32_t* _FAT_getCwdClusterPtr(const char* name) {
-	PARTITION *partition = _FAT_partition_getPartitionFromPath(name);
-
-	if (!partition) {
-		return NULL;
-	}
-
-	return &partition->cwdCluster;
 }

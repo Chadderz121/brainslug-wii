@@ -9,6 +9,7 @@
  This also has the benefit of throwing out old sectors, so as not to keep
  too many stale pages around.
 
+ Edited 2014 by Alex Chadwick for inclusion in bslug
  Copyright (c) 2006 Michael "Chishm" Chisholm
 
  Redistribution and use in source and binary forms, with or without modification,
@@ -40,11 +41,12 @@
 #include "cache.h"
 #include "disc.h"
 
-#include "mem_allocate.h"
 #include "bit_ops.h"
 #include "file_allocation_table.h"
 
 #define CACHE_FREE UINT_MAX
+
+typedef uint32_t u32;
 
 CACHE* _FAT_cache_constructor (unsigned int numberOfPages, unsigned int sectorsPerPage, const DISC_INTERFACE* discInterface, sec_t endOfPartition, unsigned int bytesPerSector) {
 	CACHE* cache;
@@ -282,9 +284,13 @@ bool _FAT_cache_writeSectors (CACHE* cache, sec_t sector, sec_t numSectors, cons
 		secs_to_write = entry->count - sec;
 		if(secs_to_write>numSectors) secs_to_write = numSectors;
 
-		memcpy(entry->cache + (sec*cache->bytesPerSector),src,(secs_to_write*cache->bytesPerSector));
-
-		src += (secs_to_write*cache->bytesPerSector);
+        if (src != NULL) {
+            memcpy(entry->cache + (sec*cache->bytesPerSector),src,(secs_to_write*cache->bytesPerSector));
+            src += (secs_to_write*cache->bytesPerSector);
+        } else {
+            memset(entry->cache + (sec*cache->bytesPerSector),0,(secs_to_write*cache->bytesPerSector));
+        }
+        
 		sector += secs_to_write;
 		numSectors -= secs_to_write;
 

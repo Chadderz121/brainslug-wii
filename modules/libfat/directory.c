@@ -3,6 +3,7 @@
  Reading, writing and manipulation of the directory structure on
  a FAT partition
 
+ Edited 2014 by Alex Chadwick for inclusion in bslug
  Copyright (c) 2006 Michael "Chishm" Chisholm
 
  Redistribution and use in source and binary forms, with or without modification,
@@ -49,6 +50,7 @@
 #define LAST_LFN_POS_CORRECTION (MAX_LFN_LENGTH-15)
 
 typedef unsigned short ucs2_t;
+typedef uint8_t u8;
 
 // Long file name directory entry
 enum LFN_offset {

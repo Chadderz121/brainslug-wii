@@ -4,6 +4,7 @@
  Functions used by the newlib disc stubs to interface with 
  this library
 
+ Edited 2014 by Alex Chadwick for inclusion in bslug
  Copyright (c) 2006 Michael "Chishm" Chisholm
 	
  Redistribution and use in source and binary forms, with or without modification,
@@ -42,9 +43,9 @@
 #define FILE_MAX_SIZE ((uint32_t)0xFFFFFFFF)	// 4GiB - 1B
 
 typedef struct {
-	u32   cluster;
+	uint32_t cluster;
 	sec_t sector;
-	s32   byte;
+	int32_t byte;
 } FILE_POSITION;
 
 struct _FILE_STRUCT;
@@ -69,7 +70,7 @@ struct _FILE_STRUCT {
 
 typedef struct _FILE_STRUCT FILE_STRUCT;
 
-int _FAT_open_r (struct _reent *r, void *fileStruct, const char *path, int flags, int mode);
+int _FAT_open_r (struct _reent *r, void *fileStruct, PARTITION *partition, const char *path, int flags, int mode);
 
 int _FAT_close_r (struct _reent *r, int fd);
 
