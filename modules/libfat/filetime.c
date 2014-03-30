@@ -41,7 +41,6 @@
 #define MIN_DAY 1
 
 uint16_t _FAT_filetime_getTimeFromRTC (void) {
-#ifdef USE_RTC_TIME
 	struct tm timeParts;
 	time_t epochTime;
 	
@@ -61,14 +60,10 @@ uint16_t _FAT_filetime_getTimeFromRTC (void) {
 		((timeParts.tm_min & 0x3F) << 5) |
 		((timeParts.tm_sec >> 1) & 0x1F) 
 	);
-#else
-	return 0;
-#endif
 }
 
 
 uint16_t _FAT_filetime_getDateFromRTC (void) {
-#ifdef USE_RTC_TIME
 	struct tm timeParts;
 	time_t epochTime;
 	
@@ -85,9 +80,6 @@ uint16_t _FAT_filetime_getDateFromRTC (void) {
 		(((timeParts.tm_mon + 1) & 0xF) << 5) |
 		(timeParts.tm_mday & 0x1F)
 	);
-#else
-	return 0;
-#endif
 }
 
 time_t _FAT_filetime_to_time_t (uint16_t t, uint16_t d) {

@@ -44,7 +44,7 @@ typedef struct {
 	unsigned int count;
 	unsigned int last_access;
 	bool         dirty;
-	uint8_t*     cache;
+	uint8_t     *cache;
 } CACHE_ENTRY;
 
 typedef struct {
@@ -53,7 +53,7 @@ typedef struct {
 	unsigned int          numberOfPages;
 	unsigned int          sectorsPerPage;
 	unsigned int          bytesPerSector;
-	CACHE_ENTRY*          cacheEntries;
+	CACHE_ENTRY           cacheEntries[];
 } CACHE;
 
 /*
@@ -120,7 +120,7 @@ Clear out the contents of the cache without writing any dirty sectors first
 */
 void _FAT_cache_invalidate (CACHE* cache);
 
-CACHE* _FAT_cache_constructor (unsigned int numberOfPages, unsigned int sectorsPerPage, const DISC_INTERFACE* discInterface, sec_t endOfPartition, unsigned int bytesPerSector);
+CACHE* _FAT_cache_constructor (uint8_t *cacheSpace, size_t cacheSize, const DISC_INTERFACE* discInterface, sec_t endOfPartition, unsigned int bytesPerSector);
 
 void _FAT_cache_destructor (CACHE* cache);
 

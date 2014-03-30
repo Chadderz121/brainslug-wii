@@ -159,11 +159,15 @@ sec_t FindFirstValidPartition_buf(const DISC_INTERFACE* disc, uint8_t *sectorBuf
 	return 0;
 }
 
-PARTITION* FAT_partition_constructor (const DISC_INTERFACE* disc, PARTITION *partition, uint8_t *cacheSpace, uint32_t cacheSize, uint32_t sectorsPerPage, sec_t startSector)
+PARTITION* FAT_partition_constructor (const DISC_INTERFACE* disc, PARTITION *partition, uint8_t *cacheSpace, size_t cacheSize, sec_t startSector)
 {
     uint8_t *sectorBuffer;
     
     sectorBuffer = cacheSpace;
+    
+    if (cacheSize < MAX_SECTOR_SIZE || cacheSpace == NULL) {
+        return NULL;
+    }
 
 	// Read first sector of disc
 	if (!_FAT_disc_readSectors (disc, startSector, 1, sectorBuffer)) {
@@ -270,7 +274,7 @@ PARTITION* FAT_partition_constructor (const DISC_INTERFACE* disc, PARTITION *par
 	}
 
 	// Create a cache to use
-	partition->cache = _FAT_cache_constructor (cacheSize, sectorsPerPage, partition->disc, startSector+partition->numberOfSectors, partition->bytesPerSector);
+	partition->cache = _FAT_cache_constructor (cacheSpace, cacheSize, partition->disc, startSector+partition->numberOfSectors, partition->bytesPerSector);
 
 	// Set current directory to the root
 	partition->cwdCluster = partition->rootDirCluster;

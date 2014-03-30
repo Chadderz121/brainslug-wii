@@ -46,69 +46,64 @@
 
 #define CACHE_FREE UINT_MAX
 
-typedef uint32_t u32;
+#define SECTORS_PER_PAGE 8
 
-CACHE* _FAT_cache_constructor (unsigned int numberOfPages, unsigned int sectorsPerPage, const DISC_INTERFACE* discInterface, sec_t endOfPartition, unsigned int bytesPerSector) {
+CACHE* _FAT_cache_constructor (uint8_t *cacheSpace, size_t cacheSize, const DISC_INTERFACE* discInterface, sec_t endOfPartition, unsigned int bytesPerSector) {
 	CACHE* cache;
-	unsigned int i;
+	unsigned int i, numberOfPages;
 	CACHE_ENTRY* cacheEntries;
+    
+    if (cacheSize < sizeof(CACHE))
+        return NULL;
+    
+    numberOfPages = (cacheSize - sizeof(CACHE) - 32) / (sizeof(CACHE_ENTRY) + bytesPerSector * SECTORS_PER_PAGE);
 
 	if (numberOfPages < 2) {
-		numberOfPages = 2;
+		return NULL;
 	}
-
-	if (sectorsPerPage < 8) {
-		sectorsPerPage = 8;
-	}
-
-	cache = (CACHE*) _FAT_mem_allocate (sizeof(CACHE));
+    
+	cache = (CACHE*) cacheSpace;
 	if (cache == NULL) {
 		return NULL;
 	}
+    
+    cacheSpace += sizeof(CACHE);
 
 	cache->disc = discInterface;
 	cache->endOfPartition = endOfPartition;
 	cache->numberOfPages = numberOfPages;
-	cache->sectorsPerPage = sectorsPerPage;
+	cache->sectorsPerPage = SECTORS_PER_PAGE;
 	cache->bytesPerSector = bytesPerSector;
 
 
-	cacheEntries = (CACHE_ENTRY*) _FAT_mem_allocate ( sizeof(CACHE_ENTRY) * numberOfPages);
-	if (cacheEntries == NULL) {
-		_FAT_mem_free (cache);
-		return NULL;
-	}
+	cacheEntries = cache->cacheEntries;
+    
+    cacheSpace += sizeof(CACHE_ENTRY) * numberOfPages;
+    /* align to 32 */
+    cacheSpace += (-(unsigned int)cacheSpace & ~31);
 
 	for (i = 0; i < numberOfPages; i++) {
 		cacheEntries[i].sector = CACHE_FREE;
 		cacheEntries[i].count = 0;
 		cacheEntries[i].last_access = 0;
 		cacheEntries[i].dirty = false;
-		cacheEntries[i].cache = (uint8_t*) _FAT_mem_align ( sectorsPerPage * bytesPerSector );
+		cacheEntries[i].cache = cacheSpace;
+        
+        cacheSpace += bytesPerSector * SECTORS_PER_PAGE;
 	}
-
-	cache->cacheEntries = cacheEntries;
 
 	return cache;
 }
 
 void _FAT_cache_destructor (CACHE* cache) {
-	unsigned int i;
 	// Clear out cache before destroying it
 	_FAT_cache_flush(cache);
-
-	// Free memory in reverse allocation order
-	for (i = 0; i < cache->numberOfPages; i++) {
-		_FAT_mem_free (cache->cacheEntries[i].cache);
-	}
-	_FAT_mem_free (cache->cacheEntries);
-	_FAT_mem_free (cache);
 }
 
 
-static u32 accessCounter = 0;
+static uint32_t accessCounter = 0;
 
-static u32 accessTime(){
+static uint32_t accessTime(){
 	accessCounter++;
 	return accessCounter;
 }

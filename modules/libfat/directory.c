@@ -50,7 +50,6 @@
 #define LAST_LFN_POS_CORRECTION (MAX_LFN_LENGTH-15)
 
 typedef unsigned short ucs2_t;
-typedef uint8_t u8;
 
 // Long file name directory entry
 enum LFN_offset {
@@ -205,7 +204,7 @@ static int _FAT_directory_mbsncasecmp (const char* s1, const char* s2, size_t le
 }
 
 
-static bool _FAT_directory_entryGetAlias (const u8* entryData, char* destName) {
+static bool _FAT_directory_entryGetAlias (const uint8_t* entryData, char* destName) {
 	char c;
 	bool caseInfo;
 	int i = 0;
