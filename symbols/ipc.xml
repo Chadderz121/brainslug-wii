@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Symbols relating to communication with starlet -->
-<symbols debug="on">
+<symbols>
     <symbol name="IOS_OpenAsync" size="0x118" offset="0x5c">
         <data>
             93A30020 38A00000 38000001 80810008
