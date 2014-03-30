@@ -51,6 +51,7 @@ PREFIX  = powerpc-eabi-
 AS      = $(PREFIX)as
 LD      = $(PREFIX)ld
 CC      = $(PREFIX)g++
+OBJDUMP = $(PREFIX)objdump
 
 # --relocatable: make sure ld doesn't remove relocations bslug will need
 # -s: strip local symbols to speed linking
