@@ -29,29 +29,23 @@
 #ifndef _BIT_OPS_H
 #define _BIT_OPS_H
 
+#include <ppu_intrinsics.h>
 #include <stdint.h>
 
 /*-----------------------------------------------------------------
 Functions to deal with little endian values stored in uint8_t arrays
 -----------------------------------------------------------------*/
-static inline uint16_t u8array_to_u16 (const uint8_t* item, int offset) {
-	return ( item[offset] | (item[offset + 1] << 8));
+static inline uint16_t u8array_to_u16(const uint8_t *array, int offset) {
+    return __lhbrx(array + offset);
 }
-
-static inline uint32_t u8array_to_u32 (const uint8_t* item, int offset) {
-	return ( item[offset] | (item[offset + 1] << 8) | (item[offset + 2] << 16) | (item[offset + 3] << 24));
+static inline uint32_t u8array_to_u32(const uint8_t *array, int offset) {
+    return __lwbrx(array + offset);
 }
-
-static inline void u16_to_u8array (uint8_t* item, int offset, uint16_t value) {
-	item[offset]     = (uint8_t) value;
-	item[offset + 1] = (uint8_t)(value >> 8);
+static inline void u16_to_u8array(uint8_t *array, int offset, uint16_t value) {
+    __sthbrx(array + offset, value);
 }
-
-static inline void u32_to_u8array (uint8_t* item, int offset, uint32_t value) {
-	item[offset]     = (uint8_t) value;
-	item[offset + 1] = (uint8_t)(value >> 8);
-	item[offset + 2] = (uint8_t)(value >> 16);
-	item[offset + 3] = (uint8_t)(value >> 24);
+static inline void u32_to_u8array(uint8_t *array, int offset, uint32_t value) {
+    __stwbrx(array + offset, value);
 }
 
 #endif // _BIT_OPS_H
