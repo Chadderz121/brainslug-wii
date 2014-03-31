@@ -80,6 +80,25 @@ static const int LFN_offset_table[13]={0x01,0x03,0x05,0x07,0x09,0x0E,0x10,0x12,0
 static const char ILLEGAL_ALIAS_CHARACTERS[] = "\\/:;*?\"<>|&+,=[] ";
 static const char ILLEGAL_LFN_CHARACTERS[] = "\\/:*?\"<>|";
 
+static inline int strncasecmp(const char *left, const char *right, size_t size) {
+    size_t i;
+    for (i = 0; i < size; i++) {
+        char lchar, rchar;
+        
+        lchar = left[i];
+        rchar = right[i];
+        
+        if (tolower(lchar) != tolower(rchar)) {
+            return tolower(lchar) - tolower(rchar);
+        }
+        
+        if (lchar == '\0')
+            return 0;
+    }
+    
+    return 0;
+}
+
 /*
 Returns number of UCS-2 characters needed to encode an LFN
 Returns -1 if it is an invalid LFN
