@@ -60,7 +60,7 @@ int strncmp (const char *str1, const char *str2, size_t maxlen);
 size_t strnlen(const char *s, size_t maxlen);
 
 static inline char *strrchr(const char *str, int character) {
-    return memrchr(str, character, strlen(str));
+    return memrchr(str, character, strlen(str) + 1);
 }
 static inline char *strpbrk(const char *str, const char *set) {
     char *result = (char *)str;
