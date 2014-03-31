@@ -33,7 +33,6 @@
 #ifndef _FATDIR_H
 #define _FATDIR_H
 
-#include <sys/reent.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include "common.h"
@@ -47,27 +46,27 @@ typedef struct {
 	bool       validEntry;
 } DIR_STATE_STRUCT;
 
-extern int FAT_stat_r (struct _reent *r, PARTITION *partition, const char *path, struct stat *st);
+extern int FAT_stat(PARTITION *partition, const char *path, struct stat *st);
 
-extern int FAT_link_r (struct _reent *r, PARTITION *partition, const char *existing, const char *newLink);
+extern int FAT_link(PARTITION *partition, const char *existing, const char *newLink);
 
-extern int FAT_unlink_r (struct _reent *r, PARTITION *partition, const char *name);
+extern int FAT_unlink(PARTITION *partition, const char *name);
 
-extern int FAT_chdir_r (struct _reent *r, PARTITION *partition, const char *name);
+extern int FAT_chdir(PARTITION *partition, const char *name);
 
-extern int FAT_rename_r (struct _reent *r, PARTITION *partition, const char *oldName, const char *newName);
+extern int FAT_rename(PARTITION *partition, const char *oldName, const char *newName);
 
-extern int FAT_mkdir_r (struct _reent *r, PARTITION *partition, const char *path, int mode);
+extern int FAT_mkdir(PARTITION *partition, const char *path, int mode);
 
-extern int FAT_statvfs_r (struct _reent *r, PARTITION *partition, const char *path, struct statvfs *buf);
+extern int FAT_statvfs(PARTITION *partition, const char *path, struct statvfs *buf);
 
 /*
 Directory iterator functions
 */
-extern DIR_STATE_STRUCT* FAT_diropen_r(struct _reent *r, DIR_STATE_STRUCT *state, PARTITION *partition, const char *path);
-extern int FAT_dirreset_r (struct _reent *r, DIR_STATE_STRUCT *state);
-extern int FAT_dirnext_r (struct _reent *r, DIR_STATE_STRUCT *state, char *filename, struct stat *filestat);
-extern int FAT_dirclose_r (struct _reent *r, DIR_STATE_STRUCT *state);
+extern DIR_STATE_STRUCT* FAT_diropen(DIR_STATE_STRUCT *state, PARTITION *partition, const char *path);
+extern int FAT_dirreset(DIR_STATE_STRUCT *state);
+extern int FAT_dirnext(DIR_STATE_STRUCT *state, char *filename, struct stat *filestat);
+extern int FAT_dirclose(DIR_STATE_STRUCT *state);
 
 
 #endif // _FATDIR_H

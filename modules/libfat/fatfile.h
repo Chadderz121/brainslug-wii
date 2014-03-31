@@ -33,7 +33,6 @@
 #ifndef _FATFILE_H
 #define _FATFILE_H
 
-#include <sys/reent.h>
 #include <sys/stat.h>
 
 #include "common.h"
@@ -70,31 +69,31 @@ struct _FILE_STRUCT {
 
 typedef struct _FILE_STRUCT FILE_STRUCT;
 
-int FAT_open_r (struct _reent *r, void *fileStruct, PARTITION *partition, const char *path, int flags, int mode);
+int FAT_open(void *fileStruct, PARTITION *partition, const char *path, int flags, int mode);
 
-int FAT_close_r (struct _reent *r, int fd);
+int FAT_close(int fd);
 
-ssize_t FAT_write_r (struct _reent *r,int fd, const char *ptr, size_t len);
+ssize_t FAT_write(int fd, const char *ptr, size_t len);
 
-ssize_t FAT_read_r (struct _reent *r, int fd, char *ptr, size_t len);
+ssize_t FAT_read(int fd, char *ptr, size_t len);
 
-off_t FAT_seek_r (struct _reent *r, int fd, off_t pos, int dir);
+off_t FAT_seek(int fd, off_t pos, int dir);
 
-int FAT_fstat_r (struct _reent *r, int fd, struct stat *st);
+int FAT_fstat(int fd, struct stat *st);
 
-int FAT_stat_r (struct _reent *r, PARTITION *partition, const char *path, struct stat *st);
+int FAT_stat(PARTITION *partition, const char *path, struct stat *st);
 
-int FAT_link_r (struct _reent *r, PARTITION *partition, const char *existing, const char *newLink);
+int FAT_link(PARTITION *partition, const char *existing, const char *newLink);
 
-int FAT_unlink_r (struct _reent *r, PARTITION *partition, const char *name);
+int FAT_unlink(PARTITION *partition, const char *name);
 
-int FAT_chdir_r (struct _reent *r, PARTITION *partition, const char *name);
+int FAT_chdir(PARTITION *partition, const char *name);
 
-int FAT_rename_r (struct _reent *r, PARTITION *partition, const char *oldName, const char *newName);
+int FAT_rename(PARTITION *partition, const char *oldName, const char *newName);
 
-int FAT_ftruncate_r (struct _reent *r, int fd, off_t len);
+int FAT_ftruncate(int fd, off_t len);
 
-int FAT_fsync_r (struct _reent *r, int fd);
+int FAT_fsync(int fd);
 
 /*
 Synchronizes the file data to disc.
