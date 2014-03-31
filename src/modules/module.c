@@ -338,7 +338,7 @@ static void Module_Load(const char *path) {
         case ELF_K_AR:
             /* TODO */
             printf(
-                "Warning: Ignoring %s - Archives not yet supported.\n", path);
+                "Warning: Ignoring '%s' - Archives not yet supported.\n", path);
             module_has_info = true;
             goto exit_error;
         case ELF_K_ELF:
@@ -346,7 +346,7 @@ static void Module_Load(const char *path) {
             break;
         default:
             printf(
-                "Warning: Ignoring %s - Invalid ELF file.\n", path);
+                "Warning: Ignoring '%s' - Invalid ELF file.\n", path);
             goto exit_error;
     }
 
@@ -372,27 +372,27 @@ static void Module_LoadElf(const char *path, Elf *elf) {
     ident = elf_getident(elf, &sz);
     
     if (ident == NULL) {
-        printf("Warning: Ignoring %s - Invalid ELF header.\n", path);
+        printf("Warning: Ignoring '%s' - Invalid ELF header.\n", path);
         module_has_info = true;
         goto exit_error;
     }
     if (sz < 7) {
-        printf("Warning: Ignoring %s - Invalid ELF header.\n", path);
+        printf("Warning: Ignoring '%s' - Invalid ELF header.\n", path);
         module_has_info = true;
         goto exit_error;
     }
     if (ident[4] != ELFCLASS32) {
-        printf("Warning: Ignoring %s - Not 32 bit ELF.\n", path);
+        printf("Warning: Ignoring '%s' - Not 32 bit ELF.\n", path);
         module_has_info = true;
         goto exit_error;
     }
     if (ident[5] != ELFDATA2MSB) {
-        printf("Warning: Ignoring %s - Not Big Endian.\n", path);
+        printf("Warning: Ignoring '%s' - Not Big Endian.\n", path);
         module_has_info = true;
         goto exit_error;
     }
     if (ident[6] != EV_CURRENT) {
-        printf("Warning: Ignoring %s - Unknown ELF version.\n", path);
+        printf("Warning: Ignoring '%s' - Unknown ELF version.\n", path);
         module_has_info = true;
         goto exit_error;
     }
@@ -400,28 +400,28 @@ static void Module_LoadElf(const char *path, Elf *elf) {
     ehdr = elf32_getehdr(elf);
     
     if (ehdr == NULL) {
-        printf("Warning: Ignoring %s - Invalid ELF header\n", path);
+        printf("Warning: Ignoring '%s' - Invalid ELF header\n", path);
         module_has_info = true;
         goto exit_error;
     }
     if (ehdr->e_type != ET_REL) {
-        printf("Warning: Ignoring %s - Not relocatable ELF.\n", path);
+        printf("Warning: Ignoring '%s' - Not relocatable ELF.\n", path);
         module_has_info = true;
         goto exit_error;
     }
     if (ehdr->e_machine != EM_PPC) {
-        printf("Warning: Ignoring %s - Architecture not EM_PPC.\n", path);
+        printf("Warning: Ignoring '%s' - Architecture not EM_PPC.\n", path);
         module_has_info = true;
         goto exit_error;
     }
     if (ehdr->e_version != EV_CURRENT) {
-        printf("Warning: Ignoring %s - Unknown ELF version.\n", path);
+        printf("Warning: Ignoring '%s' - Unknown ELF version.\n", path);
         module_has_info = true;
         goto exit_error;
     }
         
     if (!Module_LoadElfSymtab(elf, &symtab, &symtab_count, &symtab_strndx)) {
-        printf("Warning: Ignoring %s - Couldn't parse symtab.\n", path);
+        printf("Warning: Ignoring '%s' - Couldn't parse symtab.\n", path);
         module_has_info = true;
         goto exit_error;
     }
@@ -435,7 +435,7 @@ static void Module_LoadElf(const char *path, Elf *elf) {
         goto exit_error;
     
     if (elf_getshdrstrndx(elf, &shstrndx) != 0) {
-        printf("Warning: Ignoring %s - Couldn't find shdrstndx.\n", path);
+        printf("Warning: Ignoring '%s' - Couldn't find shdrstndx.\n", path);
         module_has_info = true;
         goto exit_error;
     }
@@ -496,7 +496,7 @@ static void Module_LoadElf(const char *path, Elf *elf) {
         &module_list, sizeof(module_metadata_t *), 1, &module_list_capacity,
         &module_list_count, MODULE_LIST_CAPACITY_DEFAULT);
     if (list_ptr == NULL) {
-        printf("Warning: Ignoring %s - ENOMEM.\n", path);
+        printf("Warning: Ignoring '%s' - ENOMEM.\n", path);
         module_has_info = true;
         goto exit_error;
     }
@@ -573,7 +573,7 @@ static module_metadata_t *Module_MetadataRead(
     size_t shstrndx, entries_count;
     
     if (elf_getshdrstrndx(elf, &shstrndx) != 0) {
-        printf("Warning: Ignoring %s - Couldn't find shstrndx\n", path);
+        printf("Warning: Ignoring '%s' - Couldn't find shstrndx\n", path);
         module_has_info = true;
         goto exit_error;
     }
@@ -607,7 +607,7 @@ static module_metadata_t *Module_MetadataRead(
                 
             if (!Module_ElfLoadSection(elf, scn, shdr, metadata)) {
                 printf(
-                    "Warning: Ignoring %s - Couldn't load .bslug.meta.\n",
+                    "Warning: Ignoring '%s' - Couldn't load .bslug.meta.\n",
                     path);
                 module_has_info = true;
                 goto exit_error;
@@ -620,7 +620,7 @@ static module_metadata_t *Module_MetadataRead(
                     index, elf, elf_ndxscn(scn), metadata,
                     symtab, symtab_count, symtab_strndx, false)) {
                 printf(
-                    "Warning: Ignoring %s - .bslug.meta contains invalid "
+                    "Warning: Ignoring '%s' - .bslug.meta contains invalid "
                     "relocations.\n", path);
                 module_has_info = true;
                 goto exit_error;
@@ -634,7 +634,7 @@ static module_metadata_t *Module_MetadataRead(
     }
 
     if (metadata == NULL) {
-        printf("Warning: Ignoring %s - Not a BSLUG module file.\n", path);
+        printf("Warning: Ignoring '%s' - Not a BSLUG module file.\n", path);
         module_has_info = true;
         goto exit_error;
     }
@@ -664,7 +664,7 @@ static module_metadata_t *Module_MetadataRead(
         if (strncmp(metadata_cur, "game", eq - metadata_cur) == 0) {
             if (game != NULL) {
                 printf(
-                    "Warning: Ignoring %s - Multiple BSLUG_MODULE_GAME "
+                    "Warning: Ignoring '%s' - Multiple BSLUG_MODULE_GAME "
                     "declarations.\n", path);
                 module_has_info = true;
                 goto exit_error;
@@ -673,7 +673,7 @@ static module_metadata_t *Module_MetadataRead(
         } else if (strncmp(metadata_cur, "name", eq - metadata_cur) == 0) {
             if (name != NULL) {
                 printf(
-                    "Warning: Ignoring %s - Multiple BSLUG_MODULE_NAME "
+                    "Warning: Ignoring '%s' - Multiple BSLUG_MODULE_NAME "
                     "declarations.\n", path);
                 module_has_info = true;
                 goto exit_error;
@@ -682,7 +682,7 @@ static module_metadata_t *Module_MetadataRead(
         } else if (strncmp(metadata_cur, "author", eq - metadata_cur) == 0) {
             if (author != NULL) {
                 printf(
-                    "Warning: Ignoring %s - Multiple BSLUG_MODULE_AUTHOR "
+                    "Warning: Ignoring '%s' - Multiple BSLUG_MODULE_AUTHOR "
                     "declarations.\n", path);
                 module_has_info = true;
                 goto exit_error;
@@ -691,7 +691,7 @@ static module_metadata_t *Module_MetadataRead(
         } else if (strncmp(metadata_cur, "version", eq - metadata_cur) == 0) {
             if (version != NULL) {
                 printf(
-                    "Warning: Ignoring %s - Multiple BSLUG_MODULE_VERSION "
+                    "Warning: Ignoring '%s' - Multiple BSLUG_MODULE_VERSION "
                     "declarations.\n", path);
                 module_has_info = true;
                 goto exit_error;
@@ -700,7 +700,7 @@ static module_metadata_t *Module_MetadataRead(
         } else if (strncmp(metadata_cur, "license", eq - metadata_cur) == 0) {
             if (license != NULL) {
                 printf(
-                    "Warning: Ignoring %s - Multiple BSLUG_MODULE_LICENSE "
+                    "Warning: Ignoring '%s' - Multiple BSLUG_MODULE_LICENSE "
                     "declarations.\n", path);
                 module_has_info = true;
                 goto exit_error;
@@ -709,7 +709,7 @@ static module_metadata_t *Module_MetadataRead(
         } else if (strncmp(metadata_cur, "bslug", eq - metadata_cur) == 0) {
             if (bslug != NULL) {
                 printf(
-                    "Warning: Ignoring %s - Multiple BSLUG_MODULE_NAME "
+                    "Warning: Ignoring '%s' - Multiple BSLUG_MODULE_NAME "
                     "declarations.\n", path);
                 module_has_info = true;
                 goto exit_error;
@@ -721,34 +721,34 @@ static module_metadata_t *Module_MetadataRead(
     if (game == NULL)
         game = "";
     if (bslug == NULL || strcmp(bslug, "0.1") != 0) {
-        printf("Warning: Ignoring %s - Unrecognised BSlug version.\n", path);
+        printf("Warning: Ignoring '%s' - Unrecognised BSlug version.\n", path);
         module_has_info = true;
         goto exit_error;
     }
     if (name == NULL) {
         printf(
-            "Warning: Ignoring %s - Missing BSLUG_MODULE_NAME declaration.\n",
+            "Warning: Ignoring '%s' - Missing BSLUG_MODULE_NAME declaration.\n",
             path);
         module_has_info = true;
         goto exit_error;
     }
     if (author == NULL) {
         printf(
-            "Warning: Ignoring %s - Missing BSLUG_MODULE_AUTHOR "
+            "Warning: Ignoring '%s' - Missing BSLUG_MODULE_AUTHOR "
             "declaration.\n", path);
         module_has_info = true;
         goto exit_error;
     }
     if (version == NULL) {
         printf(
-            "Warning: Ignoring %s - Missing BSLUG_MODULE_VERSION "
+            "Warning: Ignoring '%s' - Missing BSLUG_MODULE_VERSION "
             "declaration.\n", path);
         module_has_info = true;
         goto exit_error;
     }
     if (license == NULL) {
         printf(
-            "Warning: Ignoring %s - Missing BSLUG_MODULE_LICENSE "
+            "Warning: Ignoring '%s' - Missing BSLUG_MODULE_LICENSE "
             "declaration.\n", path);
         module_has_info = true;
         goto exit_error;
@@ -759,7 +759,7 @@ static module_metadata_t *Module_MetadataRead(
         strlen(game) + strlen(name) + strlen(author) +
         strlen(version) + strlen(license) + 6);
     if (ret == NULL) {
-        printf("Warning: Ignoring %s - Couldn't parse BSlug metadata.\n", path);
+        printf("Warning: Ignoring '%s' - Couldn't parse BSlug metadata.\n", path);
         module_has_info = true;
         goto exit_error;
     }
@@ -1319,9 +1319,11 @@ static bool Module_ListLoadSymbols(uint8_t **space) {
         case BSLUG_LOADER_ENTRY_EXPORT: {
             if (!Search_SymbolAdd(
                 entry->data.export.name,
-                entry->data.export.target))
+                entry->data.export.target)) {
                 
+                printf("Could not export '%s'\n", entry->data.export.name);
                 goto exit_error;
+            }
                 
             break;
         } case BSLUG_LOADER_ENTRY_FUNCTION:
@@ -1340,7 +1342,7 @@ exit_error:
 
 static bool Module_ListLinkFinal(uint8_t **space) {
     size_t relocation_index, entry_index, module_index;
-    bool result = false;
+    bool result = false, has_error = false;
     
     relocation_index = 0;
     entry_index = 0;
@@ -1388,8 +1390,11 @@ static bool Module_ListLinkFinal(uint8_t **space) {
             symbol = Search_SymbolLookup(reloc->name);
             
             if (symbol == NULL) {
-                printf("Missing symbol %s\n", reloc->name);
-                goto exit_error;
+                printf(
+                    "Missing symbol '%s' needed by '%s'\n", reloc->name,
+                    module_list[module_index]->name);
+                has_error = true;
+                continue;
             }
             
             if (!Module_ElfLinkOne(
@@ -1401,6 +1406,9 @@ static bool Module_ListLinkFinal(uint8_t **space) {
     
     assert(entry_index == module_entries_count);
     assert(relocation_index == module_relocations_count);
+    
+    if (has_error)
+        goto exit_error;
     
     result = true;
 exit_error:
@@ -1436,7 +1444,7 @@ static bool Module_ListLinkFinalReplaceFunction(
             Search_SymbolAdd(entry->data.function.name, *space);
             goto exit_success;
         } else {
-            printf("Missing symbol %s\n", entry->data.function.name);
+            printf("Missing symbol '%s'\n", entry->data.function.name);
             goto exit_error;
         }
     }

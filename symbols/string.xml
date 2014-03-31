@@ -76,7 +76,7 @@
     </symbol>
     <symbol name="strnlen" size="0x2c" offset="0x0" >
         <data>
-            7C651B78 48000008
+            7C651B78 48000008 38A50001
         </data>
     </symbol>
 </symbols>

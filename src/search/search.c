@@ -132,6 +132,9 @@ static void *Search_Main(void *arg) {
                 apploader_app0_end - apploader_app0_start,
                 &Search_SymbolMatch);
         }
+        
+        FSM_Free(search_fsm);
+        search_fsm = NULL;
     }
     
     Event_Trigger(&search_event_complete);
@@ -340,28 +343,30 @@ bool Search_SymbolAdd(const char *name, void *address) {
     assert(name != NULL);
     
     if (search_module_symbols_count == search_module_symbols_capacity) {
-        assert(search_module_symbols == NULL);
-        
-        search_module_symbols =
-            malloc(sizeof(*search_module_symbols) *
-            SEARCH_MODULE_SYMBOLS_CAPACITY_DEFAULT);
-        if (search_module_symbols == NULL)
-            return false;
-        
-        search_module_symbols_capacity = SEARCH_MODULE_SYMBOLS_CAPACITY_DEFAULT;
-    } else {
-        assert(search_module_symbols != NULL);
-        void *alloc;
-        
-        alloc = realloc(
-            search_module_symbols,
-            sizeof(*search_module_symbols) * 2 *
-            search_module_symbols_capacity);
-        if (alloc == NULL)
-            return false;
-        
-        search_module_symbols = alloc;
-        search_module_symbols_capacity *= 2;
+        if (search_module_symbols_capacity == 0) {
+            assert(search_module_symbols == NULL);
+            
+            search_module_symbols =
+                malloc(sizeof(*search_module_symbols) *
+                SEARCH_MODULE_SYMBOLS_CAPACITY_DEFAULT);
+            if (search_module_symbols == NULL)
+                return false;
+            
+            search_module_symbols_capacity = SEARCH_MODULE_SYMBOLS_CAPACITY_DEFAULT;
+        } else {
+            assert(search_module_symbols != NULL);
+            void *alloc;
+            
+            alloc = realloc(
+                search_module_symbols,
+                sizeof(*search_module_symbols) * 2 *
+                search_module_symbols_capacity);
+            if (alloc == NULL)
+                return false;
+            
+            search_module_symbols = alloc;
+            search_module_symbols_capacity *= 2;
+        }
     }
     
     assert(search_module_symbols != NULL);

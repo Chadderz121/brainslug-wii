@@ -39,18 +39,9 @@
         </data>
     </symbol>
     <!-- there are at least two versions of vsprintf, one is 4 bytes longer -->
-    <symbol name="vsprintf" size="0x80" offset="0x38" >
+    <symbol name="vsprintf" size="0x80" offset="0xc" >
         <data>
-            3867????
-            93C1000C 93E10010 4???????
-            2C1D0000 41820018 7C03F040 4080000C
-        </data>
-    </symbol>
-    <symbol name="vsprintf" size="0x84" offset="0x38" >
-        <data>
-            3867???? 38E00000
-            93C1000C 93E10010 4???????
-            2C1D0000 41820018 7C03F040 4080000C
+            7C852378 90010034 3CE0
         </data>
     </symbol>
     <!-- there are at least two versions of snprintf -->

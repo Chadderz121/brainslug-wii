@@ -44,7 +44,7 @@ typedef struct bslug_loader_entry_t {
             const void *target;
         } function;
         struct {
-            const void *name;
+            const char *name;
             void *target;
         } export;
     } data;
