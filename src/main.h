@@ -29,7 +29,7 @@
 
 #include "library/event.h"
 
-#define BSLUG_LOADER_VERSION BSLUG_VERSION(0, 1, 1)
+#define BSLUG_LOADER_VERSION BSLUG_VERSION(0, 1, 2)
 
 extern event_t main_event_fat_loaded;
 

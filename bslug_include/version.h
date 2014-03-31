@@ -13,6 +13,6 @@
 #define BSLUG_VERSION_MINOR(ver)    ((uint8_t)(((ver) >> 16) & 0xff))
 #define BSLUG_VERSION_REVISION(ver) ((uint16_t)(((ver) >> 0) & 0xffff))
 
-#define BSLUG_LIB_VERSION BSLUG_VERSION(0, 1, 1)
+#define BSLUG_LIB_VERSION BSLUG_VERSION(0, 1, 2)
 
 #endif /* BSLUG_VERSION_H_*/
