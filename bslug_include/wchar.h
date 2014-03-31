@@ -54,7 +54,7 @@ typedef struct {
   int __count;
   union {
     wint_t __wch;
-    unsigned char __wchb[4];
+    char __wchb[4];
   } __value;		/* Value so far.  */
 } mbstate_t;
 
@@ -164,7 +164,7 @@ static inline size_t mbsrtowcs(
         }
         
         if (dest) {
-            *dest = (whcar_t)utf32;
+            *dest = (wchar_t)utf32;
             dest++;
         }
         cur = end;
@@ -176,37 +176,37 @@ static inline size_t mbsrtowcs(
 static inline size_t wcrtomb(char *pmb, wchar_t wc, mbstate_t *ps) {
     size_t bytes;
 
-    if ((in  >= 0x0000D800 && in <= 0x0000DFFF)
-        || in > 0x00200000 || in == 0x0000FFFF || in == 0x0000FFFE)
+    if ((wc  >= 0x0000D800 && wc <= 0x0000DFFF)
+        || wc > 0x00200000 || wc == 0x0000FFFF || wc == 0x0000FFFE)
         return (size_t)0;
 
-    if (in < 0x80)
+    if (wc < 0x80)
         bytes = 1;
-    else if (in < 0x800)
+    else if (wc < 0x800)
         bytes = 2;
-    else if (in < 0x10000)
+    else if (wc < 0x10000)
         bytes = 3;
-    else if (in < 0x200000)
+    else if (wc < 0x200000)
         bytes = 4;
 
     switch (bytes) {
     case 1:
-        *pmb = (unsigned char)in;
+        *pmb = (unsigned char)wc;
         break;
     case 2:
-        *pmb++ = (unsigned char)((in >> 6) | 0x000000C0);
-        *pmb++ = (unsigned char)((in & 0x0000003F) | 0x00000080);
+        *pmb++ = (unsigned char)((wc >> 6) | 0x000000C0);
+        *pmb++ = (unsigned char)((wc & 0x0000003F) | 0x00000080);
         break;
     case 3:
-        *pmb++ = (unsigned char)((in >> 12) | 0x000000E0);
-        *pmb++ = (unsigned char)(((in >> 6) & 0x0000003F) | 0x00000080);
-        *pmb++ = (unsigned char)((in        & 0x0000003F) | 0x00000080);
+        *pmb++ = (unsigned char)((wc >> 12) | 0x000000E0);
+        *pmb++ = (unsigned char)(((wc >> 6) & 0x0000003F) | 0x00000080);
+        *pmb++ = (unsigned char)((wc        & 0x0000003F) | 0x00000080);
         break;
     case 4:
-        *pmb++ = (unsigned char)((in >> 18)  | 0x000000F0);
-        *pmb++ = (unsigned char)(((in >> 12) & 0x0000003F) | 0x00000080);
-        *pmb++ = (unsigned char)(((in >> 6)  & 0x0000003F) | 0x00000080);
-        *pmb++ = (unsigned char)((in         & 0x0000003F) | 0x00000080);
+        *pmb++ = (unsigned char)((wc >> 18)  | 0x000000F0);
+        *pmb++ = (unsigned char)(((wc >> 12) & 0x0000003F) | 0x00000080);
+        *pmb++ = (unsigned char)(((wc >> 6)  & 0x0000003F) | 0x00000080);
+        *pmb++ = (unsigned char)((wc         & 0x0000003F) | 0x00000080);
         break;
     }
 
