@@ -144,7 +144,6 @@ static void Console_DWC_SetLogMask(DWC_LogType_t log_mask) {
 }
 static size_t Console_fwrite(
         const void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    
     if (stream && ptr && (stream->fd == 1 || stream->fd == 2)) {
         /* stdout && stderr */
         const char *str;
@@ -156,9 +155,12 @@ static size_t Console_fwrite(
             Console_PutChar(str[i],
                 stream->fd == 1 ? COLOUR_FG : COLOUR_FG_STDERR);
         }
-    }
-    /* call down to original function */
-    return fwrite(ptr, size, nmemb, stream);
+        
+        fwrite(ptr, size, nmemb, stream);
+        return nmemb;
+    } else
+        /* call down to original function */
+        return fwrite(ptr, size, nmemb, stream);
 }
 static void Console_PutChar(char c, unsigned int fg) {
     if (FB_WIDTH == 0 || FB_HEIGHT == 0)

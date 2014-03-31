@@ -100,8 +100,10 @@ static size_t Console_fwrite(
                 amt_out = 0;
             }
         }
-    }
 skip:
-    /* call down to real fwrite. */
-    return fwrite(ptr, size, nmemb, stream);
+        fwrite(ptr, size, nmemb, stream);
+        return nmemb;
+    } else
+        /* call down to real fwrite. */
+        return fwrite(ptr, size, nmemb, stream);
 }
