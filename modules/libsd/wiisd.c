@@ -514,10 +514,11 @@ bool sdio_Deinitialize()
 
 bool sdio_Startup()
 {
+    static char heap[SDIO_HEAPSIZE] ATTRIBUTE_ALIGN(32);
 	if(__sdio_initialized==1) return true;
  
 	if(hId<0) {
-		hId = iosCreateHeap(SDIO_HEAPSIZE);
+		hId = iosCreateHeap(heap, SDIO_HEAPSIZE);
 		if(hId<0) return false;
 	}
 
