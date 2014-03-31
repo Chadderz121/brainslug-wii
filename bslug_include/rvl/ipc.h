@@ -67,27 +67,26 @@ ios_ret_t IOS_CloseAsync(ios_fd_t fd, ios_cb_t cb, usr_t usrdata);
 ios_ret_t IOS_Read(ios_fd_t fd, void *buffer, size_t length);
 ios_ret_t IOS_ReadAsync(
     ios_fd_t fd, void *buffer, size_t length, ios_cb_t cb, usr_t usrdata);
-IOS_Write(ios_fd_t fd, const void *buffer, size_t length);
-IOS_WriteAsync(
+ios_ret_t IOS_Write(ios_fd_t fd, const void *buffer, size_t length);
+ios_ret_t IOS_WriteAsync(
     ios_fd_t fd, const void *buffer, size_t length, ios_cb_t cb, usr_t usrdata);
-IOS_Seek(ios_fd_t fd, int offset, int base);
-IOS_SeekAsync(ios_fd_t fd, int offset, int base, ios_cb_t cb, usr_t usrdata);
+ios_ret_t IOS_Seek(ios_fd_t fd, int offset, int base);
+ios_ret_t IOS_SeekAsync(
+    ios_fd_t fd, int offset, int base, ios_cb_t cb, usr_t usrdata);
 
-IOS_Ioctl(
+ios_ret_t IOS_Ioctl(
     ios_fd_t fd, int ioctl, const void *input, size_t input_length,
     void *output, size_t output_length);
-IOS_IoctlAsync(
+ios_ret_t IOS_IoctlAsync(
     ios_fd_t fd, int ioctl, const void *input, size_t input_length,
     void *output, size_t output_length, ios_cb_t cb, usr_t usrdata);
 
-IOS_Ioctlv(
-    ios_fd_t fd, int s32 ioctl, int input_count, s32 output_count,
-    ioctlv *argv);
-IOS_IoctlvAsync(
-    ios_fd_t fd, int s32 ioctl, int input_count, s32 output_count,
-    ioctlv *argv, ios_cb_t cb, usr_t usrdata);
-IOS_IoctlvReboot(
-    ios_fd_t fd, int s32 ioctl, int input_count, s32 output_count,
-    ioctlv *argv);
+ios_ret_t IOS_Ioctlv(
+    ios_fd_t fd, int ioctl, int input_count, int output_count, ioctlv *argv);
+ios_ret_t IOS_IoctlvAsync(
+    ios_fd_t fd, int ioctl, int input_count, int output_count, ioctlv *argv,
+    ios_cb_t cb, usr_t usrdata);
+ios_ret_t IOS_IoctlvReboot(
+    ios_fd_t fd, int ioctl, int input_count, int output_count, ioctlv *argv);
 
 #endif /* _RVL_IPC_H_ */
