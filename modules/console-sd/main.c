@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <rvl/dwc.h>
+#include <rvl/OSThread.h>
 
 /* support any game id */
 BSLUG_MODULE_GAME("????");
@@ -55,14 +56,10 @@ static void Console_DWC_SetLogMask(DWC_LogType_t log_mask) {
     DWC_SetLogMask(0xffffffff);
 }
 static size_t Console_fwrite(
-        const void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    static int i = 0;
-    
-    if (stream && ptr && (stream->fd == 1 || stream->fd == 2) && i++ > 100) {
+        const void *ptr, size_t size, size_t nmemb, FILE *stream) {    
+    if (stream && ptr && (stream->fd == 1 || stream->fd == 2) && OSGetCurrentThread() != NULL) {
         /* stdout && stderr */
         static int sd_file = -1;
-        static size_t amt_out;
-        ssize_t write;
         
         if (sd_file == -1) {
             static FILE_STRUCT fs;
@@ -88,17 +85,15 @@ static size_t Console_fwrite(
             sd_file = SD_open(&fs, path, O_CREAT | O_WRONLY | O_APPEND);
             if (sd_file == -1)
                 goto skip;
+            
+            SD_write(
+                sd_file, "\n\n========\n\n", sizeof("\n\n========\n\n") - 1);
         }
         
-        write = SD_write(sd_file, ptr, size * nmemb);
-        if (write != -1) {
-            amt_out += write;
-            /* make sure we flush the SD regularly. */
-            if (amt_out > 1024) {
-                SD_close(sd_file);
-                sd_file = -1;
-                amt_out = 0;
-            }
+        SD_write(sd_file, ptr, size * nmemb);
+        /* make sure we flush the SD regularly. */
+        if (memchr(ptr, '\n', size * nmemb) != NULL) {
+            SD_fsync(sd_file);
         }
 skip:
         fwrite(ptr, size, nmemb, stream);
