@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the rvl/OSUtf.h header -->
+<symbols>
+    <symbol name="OSUTF8to32" size="0x110" offset="0x0" >
+        <data>
+            88C30000 2C060000 41820008 38630001
+        </data>
+    </symbol>
+    <symbol name="OSUTF32toANSI" size="0x78" offset="0x0" >
+        <data>
+            280300FF 4081000C 38600000 4E800020
+        </data>
+    </symbol>
+</symbols>
