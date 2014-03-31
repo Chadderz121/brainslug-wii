@@ -81,7 +81,7 @@ typedef struct bslug_loader_entry_t {
         .type = BSLUG_LOADER_ENTRY_EXPORT, \
         .data = { \
             .export = { \
-                .name = #symbol \
+                .name = #symbol, \
                 .target = (symbol) \
             } \
         } \
