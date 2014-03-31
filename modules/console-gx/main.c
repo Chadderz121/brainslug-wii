@@ -156,11 +156,9 @@ static size_t Console_fwrite(
             Console_PutChar(str[i],
                 stream->fd == 1 ? COLOUR_FG : COLOUR_FG_STDERR);
         }
-        
-        return nmemb;
-    } else
-        /* ignore writes to other files (if any) */
-        return fwrite(ptr, size, nmemb, stream);
+    }
+    /* call down to original function */
+    return fwrite(ptr, size, nmemb, stream);
 }
 static void Console_PutChar(char c, unsigned int fg) {
     if (FB_WIDTH == 0 || FB_HEIGHT == 0)

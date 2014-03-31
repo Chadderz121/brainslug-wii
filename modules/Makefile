@@ -5,8 +5,12 @@
 # A makefile script for generation of all brainslug modules
 ###############################################################################
 
-MODULES += console
+MODULES += console-gx
+MODULES += console-sd
 MODULES += gecko
+MODULES += libfat
+MODULES += libfat-sd
+MODULES += libsd
 MODULES += template
 
 ###############################################################################
