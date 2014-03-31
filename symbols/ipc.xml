@@ -103,55 +103,44 @@
         </data>
     </symbol>
     <!-- a new version of IOS_Ioctlv rearranges a few instructions -->
-    <symbol name="IOS_Ioctlv" size="0xdc" offset="0x28" >
+    <symbol name="IOS_Ioctlv" size="0xdc" offset="0x88" >
         <data>
-            7CFE3B78 3BE00000 4082000C 3BE0FFFC
-            4800004C 806D???? 38800040 38A00020
-            4??????? 2C030000 90610008 4082000C
-            3BE0FFEA 48000028 38A00000 38000007
-            90A30020 80810008 90A40024 80810008
-            90A40028 90030000 93430008 2C1F0000
-            40820038 80610008 7F64DB78
-        </data>
-    </symbol>
-    <symbol name="IOS_Ioctlv" size="0xdc" offset="0x28" >
-        <data>
-            7CFE3B78 3BE00000 4082000C 3BE0FFFC
-            4800004C 806D???? 38800040 38A00020
-            4??????? 2C030000 90610008 4082000C
-            3BE0FFEA 48000028 38A00000 90A30020
-            38000007
+            40820038 80610008 7F64DB78 7F85E378
         </data>
     </symbol>
     <!-- an old version of IOS_IoctlvReboot is very short -->
     <!-- a new version of IOS_IoctlvReboot rearranges a few instructions -->
-    <symbol name="IOS_IoctlvReboot" size="0xe8" offset="0x28" >
+    <symbol name="IOS_IoctlvReboot" size="0xe8" offset="0x9c" >
         <data>
-            7CFE3B78 3BE00000 4082000C 3BE0FFFC
-            4800004C 806D???? 38800040 38A00020
-            4??????? 2C030000 90610008 4082000C
-            3BE0FFEA 48000028 38A00000 38000007
-            90A30020 80810008 90A40024 80810008
-            90A40028 90030000 93430008 2C1F0000
-            40820044 80610008 38000001
+            90030028 7FA6EB78 7FC7F378 80610008
         </data>
     </symbol>
-    <symbol name="IOS_IoctlvReboot" size="0x2fc" offset="0x50" >
+    <symbol name="IOS_IoctlvReboot" size="0x2fc" offset="0xac" >
         <data>
-            34010008 3BE00000 4082000C 3BE0FFFC
-            4800004C 806D???? 38800040 38A00020
-            4??????? 2C030000 90610008 4082000C
-            3BE0FFEA 48000028 38A00000 38000007
-            90A30020
+            2C1F0000 40820208 80610008 38000001
         </data>
     </symbol>
-    <symbol name="IOS_IoctlvReboot" size="0x2fc" offset="0x50" >
+    <symbol name="iosCreateHeap" size="0x130" offset="0x28" >
         <data>
-            34010008 3BE00000 4082000C 3BE0FFFC
-            4800004C 806D???? 38800040 38A00020
-            4??????? 2C030000 90610008 4082000C
-            3BE0FFEA 48000028 38A00000 90A30020
-            38000007            
+            57A006FF 408200E0 3C80
+        </data>
+    </symbol>
+    <!-- a new version of iosAllocAligned rearranges a few instructions and is
+         0x1fc in length. -->
+    <symbol name="iosAllocAligned" size="0x204" offset="0x40" >
+        <data>
+            381EFFFF 7FC00039 408201
+        </data>
+    </symbol>
+    <!-- a new version of iosFree rearranges a few instructions -->
+    <symbol name="iosFree" size="0x1ec" offset="0x28" >
+        <data>
+            2C1E0000 4182019C 2C1D0000
+        </data>
+    </symbol>
+    <symbol name="iosFree" size="0x1e8" offset="0x28" >
+        <data>
+            2C1E0000 41820198 281D0007
         </data>
     </symbol>
 </symbols>

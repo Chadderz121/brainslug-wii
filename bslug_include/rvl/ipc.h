@@ -89,4 +89,10 @@ ios_ret_t IOS_IoctlvAsync(
 ios_ret_t IOS_IoctlvReboot(
     ios_fd_t fd, int ioctl, int input_count, int output_count, ioctlv *argv);
 
+typedef int hid_t;
+
+hid_t iosCreateHeap(size_t size);
+void *iosAlloc(hid_t hid, size_t size);
+void iosFree(hid_t hid, void *ptr);
+    
 #endif /* _RVL_IPC_H_ */
