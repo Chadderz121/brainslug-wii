@@ -80,7 +80,7 @@ CACHE* _FAT_cache_constructor (uint8_t *cacheSpace, size_t cacheSize, const DISC
     
     cacheSpace += sizeof(CACHE_ENTRY) * numberOfPages;
     /* align to 32 */
-    cacheSpace += (-(unsigned int)cacheSpace & ~31);
+    cacheSpace += (-(unsigned int)cacheSpace & 31);
 
 	for (i = 0; i < numberOfPages; i++) {
 		cacheEntries[i].sector = CACHE_FREE;
