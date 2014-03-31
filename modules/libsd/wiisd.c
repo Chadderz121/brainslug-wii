@@ -5,10 +5,11 @@
 	Hardware routines for reading and writing to the Wii's internal
 	SD slot.
 
- Copyright (c) 2008
+ Copyright (c) 2008-2014
    Michael Wiedenbauer (shagkur)
    Dave Murphy (WinterMute)
    Sven Peter <svpe@gmx.net>
+   Alex Chadwick (Chadderz)
 	
  Redistribution and use in source and binary forms, with or without modification,
  are permitted provided that the following conditions are met:
@@ -31,20 +32,13 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#if defined(HW_RVL)
 
-#include <stdlib.h>
+#include <io/disc_io.h>
+#include <rvl/ipc.h>
+#include <stdint.h>
 #include <string.h>
-#include <malloc.h>
+#include <string.h>
 #include <time.h>
-#include <gcutil.h>
-#include <ogc/ipc.h>
-#include <unistd.h>
-#include <ogc/disc_io.h>
-#include <sdcard/wiisd_io.h>
-
-#include <asm.h>
-#include <processor.h>
 
 #define SDIO_HEAPSIZE				(5*1024)
  
@@ -114,46 +108,52 @@
 #define	SDIO_STATUS_CARD_INITIALIZED	0x10000
 #define SDIO_STATUS_CARD_SDHC			0x100000
 
-#define READ_BL_LEN					((u8)(__sd0_csd[5]&0x0f))
-#define WRITE_BL_LEN				((u8)(((__sd0_csd[12]&0x03)<<2)|((__sd0_csd[13]>>6)&0x03)))
+#define READ_BL_LEN					((uint8_t)(__sd0_csd[5]&0x0f))
+#define WRITE_BL_LEN				((uint8_t)(((__sd0_csd[12]&0x03)<<2)|((__sd0_csd[13]>>6)&0x03)))
 
-static u8 *rw_buffer = NULL;
+#define ATTRIBUTE_ALIGN(x) __attribute__((aligned(x)))
+// courtesy of Marcan
+#define STACK_ALIGN(type, name, cnt, alignment)		uint8_t _al__##name[((sizeof(type)*(cnt)) + (alignment) + (((sizeof(type)*(cnt))%(alignment)) > 0 ? ((alignment) - ((sizeof(type)*(cnt))%(alignment))) : 0))]; \
+													type *name = (type*)(((uint32_t)(_al__##name)) + ((alignment) - (((uint32_t)(_al__##name))&((alignment)-1))))
+
+
+static uint8_t *rw_buffer = NULL;
 
 struct _sdiorequest
 {
-	u32 cmd;
-	u32 cmd_type;
-	u32 rsp_type;
-	u32 arg;
-	u32 blk_cnt;
-	u32 blk_size;
+	uint32_t cmd;
+	uint32_t cmd_type;
+	uint32_t rsp_type;
+	uint32_t arg;
+	uint32_t blk_cnt;
+	uint32_t blk_size;
 	void *dma_addr;
-	u32 isdma;
-	u32 pad0;
+	uint32_t isdma;
+	uint32_t pad0;
 };
  
 struct _sdioresponse
 {
-	u32 rsp_fields[3];
-	u32 acmd12_response;
+	uint32_t rsp_fields[3];
+	uint32_t acmd12_response;
 };
  
-static s32 hId = -1;
+static int hId = -1;
  
-static s32 __sd0_fd = -1;
-static u16 __sd0_rca = 0;
-static s32 __sd0_initialized = 0;
-static s32 __sd0_sdhc = 0;
-//static u8 __sd0_csd[16];
-static u8 __sd0_cid[16];
+static int __sd0_fd = -1;
+static uint16_t __sd0_rca = 0;
+static int __sd0_initialized = 0;
+static int __sd0_sdhc = 0;
+//static uint8_t __sd0_csd[16];
+static uint8_t __sd0_cid[16];
  
-static s32 __sdio_initialized = 0;
+static int __sdio_initialized = 0;
  
 static char _sd0_fs[] ATTRIBUTE_ALIGN(32) = "/dev/sdio/slot0";
 
-static s32 __sdio_sendcommand(u32 cmd,u32 cmd_type,u32 rsp_type,u32 arg,u32 blk_cnt,u32 blk_size,void *buffer,void *reply,u32 rlen)
+static int __sdio_sendcommand(uint32_t cmd,uint32_t cmd_type,uint32_t rsp_type,uint32_t arg,uint32_t blk_cnt,uint32_t blk_size,void *buffer,void *reply,uint32_t rlen)
 {
-	s32 ret;
+	int ret;
 	STACK_ALIGN(ioctlv,iovec,3,32);
 	STACK_ALIGN(struct _sdiorequest,request,1,32);
 	STACK_ALIGN(struct _sdioresponse,response,1,32);
@@ -186,45 +186,45 @@ static s32 __sdio_sendcommand(u32 cmd,u32 cmd_type,u32 rsp_type,u32 arg,u32 blk_
 	return ret;
 }
  
-static s32 __sdio_setclock(u32 set)
+static int __sdio_setclock(uint32_t set)
 {
-	s32 ret;
- 	STACK_ALIGN(u32,clock,1,32);
+	int ret;
+ 	STACK_ALIGN(uint32_t,clock,1,32);
 
 	*clock = set;
-	ret = IOS_Ioctl(__sd0_fd,IOCTL_SDIO_SETCLK,clock,sizeof(u32),NULL,0);
+	ret = IOS_Ioctl(__sd0_fd,IOCTL_SDIO_SETCLK,clock,sizeof(uint32_t),NULL,0);
  
 	return ret;
 }
-static s32 __sdio_getstatus()
+static int __sdio_getstatus()
 {
-	s32 ret;
-	STACK_ALIGN(u32,status,1,32);
+	int ret;
+	STACK_ALIGN(uint32_t,status,1,32);
  
-	ret = IOS_Ioctl(__sd0_fd,IOCTL_SDIO_GETSTATUS,NULL,0,status,sizeof(u32));
+	ret = IOS_Ioctl(__sd0_fd,IOCTL_SDIO_GETSTATUS,NULL,0,status,sizeof(uint32_t));
 	if(ret<0) return ret;
  
 	return *status;
 }
  
-static s32 __sdio_resetcard()
+static int __sdio_resetcard()
 {
-	s32 ret;
- 	STACK_ALIGN(u32,status,1,32);
+	int ret;
+ 	STACK_ALIGN(uint32_t,status,1,32);
 
 	__sd0_rca = 0;
-	ret = IOS_Ioctl(__sd0_fd,IOCTL_SDIO_RESETCARD,NULL,0,status,sizeof(u32));
+	ret = IOS_Ioctl(__sd0_fd,IOCTL_SDIO_RESETCARD,NULL,0,status,sizeof(uint32_t));
 	if(ret<0) return ret;
  
-	__sd0_rca = (u16)(*status>>16);
+	__sd0_rca = (uint16_t)(*status>>16);
 	return (*status&0xffff);
 }
  
-static s32 __sdio_gethcr(u8 reg, u8 size, u32 *val)
+static int __sdio_gethcr(uint8_t reg, uint8_t size, uint32_t *val)
 {
-	s32 ret;
-	STACK_ALIGN(u32,hcr_value,1,32);
-	STACK_ALIGN(u32,hcr_query,6,32);
+	int ret;
+	STACK_ALIGN(uint32_t,hcr_value,1,32);
+	STACK_ALIGN(uint32_t,hcr_query,6,32);
  
 	if(val==NULL) return IPC_EINVAL;
  
@@ -236,17 +236,17 @@ static s32 __sdio_gethcr(u8 reg, u8 size, u32 *val)
 	hcr_query[3] = size;
 	hcr_query[4] = 0;
 	hcr_query[5] = 0;
-	ret = IOS_Ioctl(__sd0_fd,IOCTL_SDIO_READHCREG,(void*)hcr_query,24,hcr_value,sizeof(u32));
+	ret = IOS_Ioctl(__sd0_fd,IOCTL_SDIO_READHCREG,(void*)hcr_query,24,hcr_value,sizeof(uint32_t));
 	*val = *hcr_value;
 
  
 	return ret;
 }
  
-static s32 __sdio_sethcr(u8 reg, u8 size, u32 data)
+static int __sdio_sethcr(uint8_t reg, uint8_t size, uint32_t data)
 {
-	s32 ret;
-	STACK_ALIGN(u32,hcr_query,6,32);
+	int ret;
+	STACK_ALIGN(uint32_t,hcr_query,6,32);
  
 	hcr_query[0] = reg;
 	hcr_query[1] = 0;
@@ -260,11 +260,11 @@ static s32 __sdio_sethcr(u8 reg, u8 size, u32 data)
 	return ret;
 }
 
-static s32 __sdio_waithcr(u8 reg, u8 size, u8 unset, u32 mask)
+static int __sdio_waithcr(uint8_t reg, uint8_t size, uint8_t unset, uint32_t mask)
 {
-	u32 val;
-	s32 ret;
-	s32 tries = 10;
+	uint32_t val;
+	int ret;
+	int tries = 10;
 
 	while(tries-- > 0)
 	{
@@ -277,10 +277,10 @@ static s32 __sdio_waithcr(u8 reg, u8 size, u8 unset, u32 mask)
 	return -1;
 }
  
-static s32 __sdio_setbuswidth(u32 bus_width)
+static int __sdio_setbuswidth(uint32_t bus_width)
 {
-	s32 ret;
-	u32 hc_reg = 0;
+	int ret;
+	uint32_t hc_reg = 0;
  
 	ret = __sdio_gethcr(SDIOHCR_HOSTCONTROL, 1, &hc_reg);
 	if(ret<0) return ret;
@@ -293,61 +293,61 @@ static s32 __sdio_setbuswidth(u32 bus_width)
 }
 
 #if 0
-static s32 __sd0_getstatus()
+static int __sd0_getstatus()
 {
-	s32 ret;
-	u32 status = 0;
+	int ret;
+	uint32_t status = 0;
  
-	ret = __sdio_sendcommand(SDIO_CMD_SENDSTATUS,SDIOCMD_TYPE_AC,SDIO_RESPONSE_R1,(__sd0_rca<<16),0,0,NULL,&status,sizeof(u32));
+	ret = __sdio_sendcommand(SDIO_CMD_SENDSTATUS,SDIOCMD_TYPE_AC,SDIO_RESPONSE_R1,(__sd0_rca<<16),0,0,NULL,&status,sizeof(uint32_t));
 	if(ret<0) return ret;
  
 	return status;
 }
 #endif
 
-static s32 __sd0_getrca()
+static int __sd0_getrca()
 {
-	s32 ret;
-	u32 rca;
+	int ret;
+	uint32_t rca;
  
 	ret = __sdio_sendcommand(SDIO_CMD_SENDRCA,0,SDIO_RESPONSE_R5,0,0,0,NULL,&rca,sizeof(rca));	
 	if(ret<0) return ret;
 
-	__sd0_rca = (u16)(rca>>16);
+	__sd0_rca = (uint16_t)(rca>>16);
 	return (rca&0xffff);
 }
  
-static s32 __sd0_select()
+static int __sd0_select()
 {
-	s32 ret;
+	int ret;
  
 	ret = __sdio_sendcommand(SDIO_CMD_SELECT,SDIOCMD_TYPE_AC,SDIO_RESPONSE_R1B,(__sd0_rca<<16),0,0,NULL,NULL,0);
  
 	return ret;
 }
  
-static s32 __sd0_deselect()
+static int __sd0_deselect()
 {
-	s32 ret;
+	int ret;
  
 	ret = __sdio_sendcommand(SDIO_CMD_DESELECT,SDIOCMD_TYPE_AC,SDIO_RESPONSE_R1B,0,0,0,NULL,NULL,0);
  
 	return ret;
 }
  
-static s32 __sd0_setblocklength(u32 blk_len)
+static int __sd0_setblocklength(uint32_t blk_len)
 {
-	s32 ret;
+	int ret;
  
 	ret = __sdio_sendcommand(SDIO_CMD_SETBLOCKLEN,SDIOCMD_TYPE_AC,SDIO_RESPONSE_R1,blk_len,0,0,NULL,NULL,0);
  
 	return ret;
 }
  
-static s32 __sd0_setbuswidth(u32 bus_width)
+static int __sd0_setbuswidth(uint32_t bus_width)
 {
-	u16 val;
-	s32 ret;
+	uint16_t val;
+	int ret;
  
 	val = 0x0000;
 	if(bus_width==4) val = 0x0002;
@@ -361,9 +361,9 @@ static s32 __sd0_setbuswidth(u32 bus_width)
 }
 
 #if 0
-static s32 __sd0_getcsd()
+static int __sd0_getcsd()
 {
-	s32 ret;
+	int ret;
  
 	ret = __sdio_sendcommand(SDIO_CMD_SENDCSD,SDIOCMD_TYPE_AC,SDIO_RESPOSNE_R2,(__sd0_rca<<16),0,0,NULL,__sd0_csd,16);
  
@@ -371,9 +371,9 @@ static s32 __sd0_getcsd()
 }
 #endif
 
-static s32 __sd0_getcid()
+static int __sd0_getcid()
 {
-	s32 ret;
+	int ret;
  
 	ret = __sdio_sendcommand(SDIO_CMD_ALL_SENDCID,0,SDIO_RESPOSNE_R2,(__sd0_rca<<16),0,0,NULL,__sd0_cid,16);
  
@@ -383,9 +383,9 @@ static s32 __sd0_getcid()
 
 static	bool __sd0_initio()
 {
-	s32 ret;
-	s32 tries;
-	u32 status;
+	int ret;
+	int tries;
+	uint32_t status;
 	struct _sdioresponse resp;
 
 	__sdio_resetcard();
@@ -551,8 +551,8 @@ bool sdio_Shutdown()
  
 bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer)
 {
-	s32 ret;
-	u8 *ptr;
+	int ret;
+	uint8_t *ptr;
 	sec_t blk_off;
  
 	if(buffer==NULL) return false;
@@ -560,8 +560,8 @@ bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer)
 	ret = __sd0_select();
 	if(ret<0) return false;
 
-	if((u32)buffer & 0x1F) {
-		ptr = (u8*)buffer;
+	if((uint32_t)buffer & 0x1F) {
+		ptr = (uint8_t*)buffer;
 		int secs_to_read;
 		while(numSectors>0) {
 			if(__sd0_sdhc == 0) blk_off = (sector*PAGE_SIZE512);
@@ -589,17 +589,17 @@ bool sdio_ReadSectors(sec_t sector, sec_t numSectors,void* buffer)
  
 bool sdio_WriteSectors(sec_t sector, sec_t numSectors,const void* buffer)
 {
-	s32 ret;
-	u8 *ptr;
-	u32 blk_off;
+	int ret;
+	uint8_t *ptr;
+	uint32_t blk_off;
  
 	if(buffer==NULL) return false;
  
 	ret = __sd0_select();
 	if(ret<0) return false;
 
-	if((u32)buffer & 0x1F) {
-		ptr = (u8*)buffer;
+	if((uint32_t)buffer & 0x1F) {
+		ptr = (uint8_t*)buffer;
 		int secs_to_write;
 		while(numSectors>0) {
 			if(__sd0_sdhc == 0) blk_off = (sector*PAGE_SIZE512);
@@ -652,5 +652,3 @@ const DISC_INTERFACE __io_wiisd = {
 	(FN_MEDIUM_CLEARSTATUS)&sdio_ClearStatus,
 	(FN_MEDIUM_SHUTDOWN)&sdio_Shutdown
 };
-
-#endif
