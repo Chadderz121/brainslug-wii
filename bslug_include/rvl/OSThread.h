@@ -28,6 +28,7 @@
 #ifndef _RVL_OSTHREAD_H_
 #define _RVL_OSTHREAD_H_
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

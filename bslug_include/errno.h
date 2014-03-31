@@ -28,9 +28,9 @@
 #ifndef _ERRNO_H_
 #define _ERRNO_H_
 
-#include <sys/reent.h>
+#include <rvl/OSThread.h>
 
-#define errno (_REENT->_errno)
+#define errno (OSGetCurrentThread()->_errno)
 
 #define	EPERM 1		/* Not super-user */
 #define	ENOENT 2	/* No such file or directory */
