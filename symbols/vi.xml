@@ -26,6 +26,11 @@
             40800008 4800000C 7C630034 38030020
         </data>
     </symbol>
+    <symbol name="VISetNextFrameBuffer" size="0x6c" offset="0x2c">
+        <data>
+            93C70030 7CE33B78 38870034
+        </data>
+    </symbol>
     <symbol name="VISetBlack" size="0x78" offset="0x30">
         <data>
             93C10008 A064000A A0840006 88AA0000

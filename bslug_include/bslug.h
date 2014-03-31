@@ -45,7 +45,7 @@ typedef struct bslug_loader_entry_t {
         } function;
         struct {
             const char *name;
-            void *target;
+            const void *target;
         } export;
     } data;
 } bslug_loader_entry_t;
@@ -58,7 +58,7 @@ typedef struct bslug_loader_entry_t {
         .data = { \
             .function = { \
                 .name = #original_func, \
-                .target = (replace_func) \
+                .target = &(replace_func) \
             } \
         } \
     }
@@ -70,7 +70,7 @@ typedef struct bslug_loader_entry_t {
         .data = { \
             .function = { \
                 .name = #original_func, \
-                .target = (replace_func) \
+                .target = &(replace_func) \
             } \
         } \
     }
@@ -82,7 +82,7 @@ typedef struct bslug_loader_entry_t {
         .data = { \
             .export = { \
                 .name = #symbol, \
-                .target = (symbol) \
+                .target = &(symbol) \
             } \
         } \
     }

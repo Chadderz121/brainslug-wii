@@ -1319,7 +1319,7 @@ static bool Module_ListLoadSymbols(uint8_t **space) {
         case BSLUG_LOADER_ENTRY_EXPORT: {
             if (!Search_SymbolAdd(
                 entry->data.export.name,
-                entry->data.export.target)) {
+                (void *)entry->data.export.target)) {
                 
                 printf("Could not export '%s'\n", entry->data.export.name);
                 goto exit_error;
