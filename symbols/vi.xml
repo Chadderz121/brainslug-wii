@@ -1,9 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Symbols in the rvl/vi.h header -->
 <symbols>
-    <symbol name="VISetNextFrameBuffer" size="0x6c" offset="0x2c">
+    <symbol name="VIInit" size="0x538" offset="0x34">
         <data>
-            93C70030 7CE33B78 38870034
+            A0032002 540007FF 4082000C 38600000
+        </data>
+    </symbol>
+    <symbol name="VIWaitForRetrace" size="0x54" offset="0x2c">
+        <data>
+            7C1E0040 4182FFF0 7FE3FB78
+        </data>
+    </symbol>
+    <symbol name="VIConfigure" size="0x794" offset="0x38">
+        <data>
+            54A307BE 7C001840 41820010 38000001
+        </data>
+    </symbol>
+    <symbol name="VIConfigurePan" size="0x354" offset="0x64">
+        <data>
+            2C000000 40820008 575A0C3C 3C80
+        </data>
+    </symbol>
+    <symbol name="VIFlush" size="0x114" offset="0x80">
+        <data>
+            40800008 4800000C 7C630034 38030020
+        </data>
+    </symbol>
+    <symbol name="VISetBlack" size="0x78" offset="0x30">
+        <data>
+            93C10008 A064000A A0840006 88AA0000
         </data>
     </symbol>
 </symbols>
