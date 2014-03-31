@@ -34,6 +34,7 @@
 
 typedef enum {
     IPC_OK = 0,
+    IPC_EBUSY = -2,
     IPC_EINVAL = -4,
     IPC_ENOENT = -6,
     IPC_EQUEUEFULL = -8,
@@ -91,7 +92,8 @@ ios_ret_t IOS_IoctlvReboot(
 
 typedef int hid_t;
 
-hid_t iosCreateHeap(size_t size);
+/* space must be aligned to 32 */
+hid_t iosCreateHeap(void *space, size_t size);
 void *iosAllocAligned(hid_t hid, size_t size, size_t alignment);
 static inline void *iosAlloc(hid_t hid, size_t size);
 void iosFree(hid_t hid, void *ptr);

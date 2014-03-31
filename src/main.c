@@ -151,6 +151,9 @@ int main(void) {
     
     Event_Wait(&apploader_event_complete);
     Event_Wait(&module_event_complete);
+    fatUnmount("sd");
+    __io_wiisd.shutdown();
+    
     if (module_has_error) {
         printf("\nPress RESET to exit.\n");
         goto exit_error;
@@ -167,7 +170,7 @@ int main(void) {
             while (SYS_ResetButtonDown())
                 VIDEO_WaitVSync();
         }
-            
+        
         SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);
         apploader_game_entry_fn();
     }
