@@ -123,19 +123,8 @@ static inline size_t mbrtowc(
         return (size_t)-1;
     }
     
-    if (bytes == 0) {
-        /* we've ended the string. */
-        if (pwc)
-            *pwc = L'\0';
-        /* reset shift state. */
-        ps->__count = 0;
-        return bytes;
-    }
-    
-    for (i = 0; i < ps->__count - bytes; i++) {
-        ps->__value.__wchb[i] = ps->__value.__wchb[i + bytes];
-    }
-    ps->__count -= bytes;
+    /* reset shift state. */
+    ps->__count = 0;
     
     if (pwc)
         *pwc = (wchar_t)wchar;
