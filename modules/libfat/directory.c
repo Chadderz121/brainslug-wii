@@ -179,7 +179,7 @@ static size_t _FAT_directory_ucs2tombs (char* dst, const ucs2_t* src, size_t len
 Case-independent comparison of two multibyte encoded strings
 */
 static int _FAT_directory_mbsncasecmp (const char* s1, const char* s2, size_t len1) {
-	wchar_t wc1, wc2;
+	wchar_t wc1 = L'\0', wc2 = L'\0';
 	mbstate_t ps1 = {0};
 	mbstate_t ps2 = {0};
 	size_t b1 = 0;
