@@ -44,7 +44,6 @@ int SD_Mount(void) {
     static uint8_t sd_cache[512 * 8 * 64];
     static OSMutex_t init_mutex;
     static bool hasInit = false;
-    PARTITION *ret;
     
     if (hasInit)
         return 0;
@@ -61,15 +60,22 @@ int SD_Mount(void) {
         return -1;
     }
     
-    ret = FAT_partition_constructor(
-        &__io_wiisd, &sd_partition, sd_cache, sizeof(sd_cache), 0);
+    if (!__io_wiisd.startup())
+        goto exit_error;
     
-    if (ret != NULL)
-        hasInit = true;
+    if (FAT_partition_constructor(
+        &__io_wiisd, &sd_partition, sd_cache, sizeof(sd_cache), 0) == NULL) {
+     
+        __io_wiisd.shutdown();
+        goto exit_error;
+    }
+    
+    hasInit = true;
+
+exit_error:
     OSUnlockMutex(&init_mutex);
     
-    if (ret == NULL)
-        return -1;
-    else
+    if (hasInit)
         return 0;
+    return -1;
 }
