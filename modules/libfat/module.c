@@ -23,11 +23,42 @@
  */
 
 #include <bslug.h>
+#include <io/fat.h>
 
 /* support any game id */
 BSLUG_MODULE_GAME("????");
 BSLUG_MODULE_NAME("libfat");
-BSLUG_MODULE_VERSION("1.0.12");
-BSLUG_MODULE_AUTHOR("Dave Murphy");
+BSLUG_MODULE_VERSION("v1.0.12");
+BSLUG_MODULE_AUTHOR("WinterMute, Chishm, Chadderz");
 BSLUG_MODULE_LICENSE("LGPL");
 
+BSLUG_EXPORT(FAT_partition_constructor);
+BSLUG_EXPORT(FAT_partition_destructor);
+
+BSLUG_EXPORT(FAT_open);
+BSLUG_EXPORT(FAT_close);
+BSLUG_EXPORT(FAT_write);
+BSLUG_EXPORT(FAT_read);
+BSLUG_EXPORT(FAT_seek);
+
+BSLUG_EXPORT(FAT_ftruncate);
+BSLUG_EXPORT(FAT_fsync);
+BSLUG_EXPORT(FAT_fstat);
+
+BSLUG_EXPORT(FAT_getAttr);
+BSLUG_EXPORT(FAT_setAttr);
+
+BSLUG_EXPORT(FAT_stat);
+BSLUG_EXPORT(FAT_statvfs);
+
+BSLUG_EXPORT(FAT_unlink);
+BSLUG_EXPORT(FAT_rename);
+
+BSLUG_EXPORT(FAT_chdir);
+
+BSLUG_EXPORT(FAT_mkdir);
+
+BSLUG_EXPORT(FAT_diropen);
+BSLUG_EXPORT(FAT_dirreset);
+BSLUG_EXPORT(FAT_dirnext);
+BSLUG_EXPORT(FAT_dirclose);
