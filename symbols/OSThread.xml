@@ -3,7 +3,48 @@
 <symbols>
     <symbol name="OSGetCurrentThread" size="0xc" offset="0x0" >
         <data>
-            3C608000 806300E4
+            3C608000 806300E4 4E800020
+        </data>
+    </symbol>
+    <symbol name="OSIsThreadTerminated" size="0x2c" offset="0x0" >
+        <data>
+            A00302C8 38600001 28000008
+        </data>
+    </symbol>
+    <symbol name="OSCreateThread" size="0x26c" offset="0x48" >
+        <data>
+            3BA0FFFF 54C60038 B0E302C8 38A6FFF8
+        </data>
+    </symbol>
+    <symbol name="OSExitThread" size="0xe4" offset="0x38" >
+        <data>
+            A01E02CA 540007FF 41820044 809E02FC
+        </data>
+    </symbol>
+    <!-- Newer version of OSCancelThread looks quite different -->
+    <symbol name="OSCancelThread" size="0x1d8" offset="0x1c" >
+        <data>
+            A01E02C8 7C7F1B78 2C000003
+        </data>
+    </symbol>
+    <symbol name="OSCancelThread" size="0x1d4" offset="0x28" >
+        <data>
+            A01E02C8 2C000001 41820018
+        </data>
+    </symbol>
+    <symbol name="OSSleepThread" size="0xec" offset="0x2c" >
+        <data>
+            B00402C8 93C402DC 80BE0000
+        </data>
+    </symbol>
+    <symbol name="OSWakeupThread" size="0xf4" offset="0x38" >
+        <data>
+            808802E0 2C040000 4082000C
+        </data>
+    </symbol>
+    <symbol name="OSSetThreadPriority" size="0xec" offset="0x3c" >
+        <data>
+            801D02D4 7C7F1B78 7C00F000
         </data>
     </symbol>
 </symbols>

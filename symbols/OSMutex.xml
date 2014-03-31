@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the rvl/OSMutex.h header -->
+<symbols>
+    <symbol name="OSLockMutex" size="0xdc" offset="0x54" >
+        <data>
+            2C030000 4082000C 939E02F4 48000008
+        </data>
+    </symbol>
+    <symbol name="OSUnlockMutex" size="0xc8" offset="0x50" >
+        <data>
+            2C040000 4082000C 90A302F8 48000008
+        </data>
+    </symbol>
+    <symbol name="OSTryLockMutex" size="0xbc" offset="0x48" >
+        <data>
+            2C040000 4082000C 93A302F4 48000008
+        </data>
+    </symbol>
+    <symbol name="OSWaitCond" size="0xdc" offset="0x48" >
+        <data>
+            901C000C 4082000C 90A302F8 48000008
+        </data>
+    </symbol>
+</symbols>
