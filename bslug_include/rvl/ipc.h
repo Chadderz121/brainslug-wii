@@ -92,7 +92,12 @@ ios_ret_t IOS_IoctlvReboot(
 typedef int hid_t;
 
 hid_t iosCreateHeap(size_t size);
-void *iosAlloc(hid_t hid, size_t size);
+void *iosAllocAligned(hid_t hid, size_t size, size_t alignment);
+static inline void *iosAlloc(hid_t hid, size_t size);
 void iosFree(hid_t hid, void *ptr);
+
+static inline void *iosAlloc(hid_t hid, size_t size) {
+    return iosAllocAligned(hid, size, 32);
+}
     
 #endif /* _RVL_IPC_H_ */
