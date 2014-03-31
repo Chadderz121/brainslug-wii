@@ -23,6 +23,7 @@
  */
 
 #include <bslug.h>
+#include <io/libsd.h>
 
 BSLUG_MODULE_GAME("????");
 BSLUG_MODULE_NAME("SD Driver");
@@ -30,3 +31,4 @@ BSLUG_MODULE_VERSION("v1.0");
 BSLUG_MODULE_AUTHOR("shagkur, WinterMute, Sven Peter, Chadderz");
 BSLUG_MODULE_LICENSE("BSD");
 
+BSLUG_EXPORT(__io_wiisd);

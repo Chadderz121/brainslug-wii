@@ -34,6 +34,7 @@
 */
 
 #include <io/disc_io.h>
+#include <io/libsd.h>
 #include <rvl/ipc.h>
 #include <rvl/vi.h>
 #include <stdint.h>
