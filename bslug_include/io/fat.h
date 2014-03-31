@@ -123,7 +123,7 @@ enum FILE_ATTR {
 FILE_ATTR FAT_getAttr(PARTITION *partition, const char *file);
 /* Sets the DOS file attributes of the specified file.
  * Returns 0 on success. Does not set errno. */
-int	FAT_setAttr(PARTITION *partition, const char *file, FILE_ATTR attr);
+int FAT_setAttr(PARTITION *partition, const char *file, FILE_ATTR attr);
 
 /* Fills in the st buffer with metadata about the specified file.
  * Returns 0 on success. Sets errno. */
