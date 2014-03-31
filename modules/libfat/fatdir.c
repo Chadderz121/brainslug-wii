@@ -77,11 +77,6 @@ int FAT_stat(PARTITION *partition, const char *path, struct stat *st) {
 	return 0;
 }
 
-int FAT_link(PARTITION *partition, const char *existing, const char *newLink) {
-	errno = ENOTSUP;
-	return -1;
-}
-
 int FAT_unlink(PARTITION *partition, const char *path) {
 	DIR_ENTRY dirEntry;
 	DIR_ENTRY dirContents;
@@ -299,7 +294,7 @@ int FAT_rename(PARTITION *partition, const char *oldName, const char *newName) {
 	return 0;
 }
 
-int FAT_mkdir(PARTITION *partition, const char *path, int mode) {
+int FAT_mkdir(PARTITION *partition, const char *path) {
 	bool fileExists;
 	DIR_ENTRY dirEntry;
 	const char* pathEnd;

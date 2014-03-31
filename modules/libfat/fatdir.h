@@ -33,40 +33,10 @@
 #ifndef _FATDIR_H
 #define _FATDIR_H
 
+#include <io/fat.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include "common.h"
 #include "directory.h"
-
-typedef struct {
-	PARTITION* partition;
-	DIR_ENTRY  currentEntry;
-	uint32_t   startCluster;
-	bool       inUse;
-	bool       validEntry;
-} DIR_STATE_STRUCT;
-
-extern int FAT_stat(PARTITION *partition, const char *path, struct stat *st);
-
-extern int FAT_link(PARTITION *partition, const char *existing, const char *newLink);
-
-extern int FAT_unlink(PARTITION *partition, const char *name);
-
-extern int FAT_chdir(PARTITION *partition, const char *name);
-
-extern int FAT_rename(PARTITION *partition, const char *oldName, const char *newName);
-
-extern int FAT_mkdir(PARTITION *partition, const char *path, int mode);
-
-extern int FAT_statvfs(PARTITION *partition, const char *path, struct statvfs *buf);
-
-/*
-Directory iterator functions
-*/
-extern DIR_STATE_STRUCT* FAT_diropen(DIR_STATE_STRUCT *state, PARTITION *partition, const char *path);
-extern int FAT_dirreset(DIR_STATE_STRUCT *state);
-extern int FAT_dirnext(DIR_STATE_STRUCT *state, char *filename, struct stat *filestat);
-extern int FAT_dirclose(DIR_STATE_STRUCT *state);
-
 
 #endif // _FATDIR_H

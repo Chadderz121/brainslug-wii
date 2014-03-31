@@ -31,6 +31,8 @@
 #ifndef _PARTITION_H
 #define _PARTITION_H
 
+#include <io/fat.h>
+
 #include "common.h"
 #include "cache.h"
 #include "lock.h"
@@ -38,52 +40,6 @@
 #define MIN_SECTOR_SIZE     512
 #define MAX_SECTOR_SIZE     4096
 
-// Filesystem type
-typedef enum {FS_UNKNOWN, FS_FAT12, FS_FAT16, FS_FAT32} FS_TYPE;
-
-typedef struct {
-	sec_t    fatStart;
-	uint32_t sectorsPerFat;
-	uint32_t lastCluster;
-	uint32_t firstFree;
-	uint32_t numberFreeCluster;
-	uint32_t numberLastAllocCluster;
-} FAT;
-
-typedef struct PARTITION_t {
-	const DISC_INTERFACE* disc;
-	CACHE*                cache;
-	// Info about the partition
-	FS_TYPE               filesysType;
-	uint64_t              totalSize;
-	sec_t                 rootDirStart;
-	uint32_t              rootDirCluster;
-	uint32_t              numberOfSectors;
-	sec_t                 dataStart;
-	uint32_t              bytesPerSector;
-	uint32_t              sectorsPerCluster;
-	uint32_t              bytesPerCluster;
-	uint32_t              fsInfoSector;
-	FAT                   fat;
-	// Values that may change after construction
-	uint32_t              cwdCluster;			// Current working directory cluster
-	int                   openFileCount;
-	struct _FILE_STRUCT*  firstOpenFile;		// The start of a linked list of files
-	mutex_t               lock;					// A lock for partition operations
-	bool                  readOnly;				// If this is set, then do not try writing to the disc
-	char                  label[12];			// Volume label
-} PARTITION;
-
-/*
-Mount the supplied device and return a pointer to the struct necessary to use it
-*/
-PARTITION* FAT_partition_constructor (const DISC_INTERFACE* disc, PARTITION *partition, uint8_t *cacheSpace, size_t cacheSize, sec_t startSector);
-
-/*
-Dismount the device and free all structures used.
-Will also attempt to synchronise all open files to disc.
-*/
-void FAT_partition_destructor (PARTITION* partition);
 
 /*
 Create the fs info sector.

@@ -30,14 +30,13 @@
 #ifndef _DIRECTORY_H
 #define _DIRECTORY_H
 
+#include <io/fat.h>
 #include <sys/stat.h>
 
 #include "common.h"
 #include "partition.h"
 
-#define DIR_ENTRY_DATA_SIZE 0x20
 #define MAX_LFN_LENGTH	256
-#define MAX_FILENAME_LENGTH 768		// 256 UCS-2 characters encoded into UTF-8 can use up to 768 UTF-8 chars
 #define MAX_ALIAS_LENGTH 13
 #define LFN_ENTRY_LENGTH 13
 #define ALIAS_ENTRY_LENGTH 11
@@ -59,21 +58,6 @@
 
 #define CASE_LOWER_EXT  0x10		// WinNT lowercase extension
 #define CASE_LOWER_BASE 0x08		// WinNT lowercase basename
-
-typedef enum {FT_DIRECTORY, FT_FILE} FILE_TYPE;
-
-typedef struct {
-	uint32_t cluster;
-	sec_t    sector;
-	int32_t  offset;
-} DIR_ENTRY_POSITION;
-
-typedef struct {
-	uint8_t            entryData[DIR_ENTRY_DATA_SIZE];
-	DIR_ENTRY_POSITION dataStart;		// Points to the start of the LFN entries of a file, or the alias for no LFN
-	DIR_ENTRY_POSITION dataEnd;			// Always points to the file/directory's alias entry
-	char               filename[MAX_FILENAME_LENGTH];
-} DIR_ENTRY;
 
 // Directory entry offsets
 enum DIR_ENTRY_offset {

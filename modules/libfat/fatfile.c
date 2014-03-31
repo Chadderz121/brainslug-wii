@@ -60,14 +60,14 @@ bool _FAT_findEntry(PARTITION *partition, const char *path, DIR_ENTRY *dirEntry)
 	
 }
 
-int	FAT_getAttr(PARTITION *partition, const char *file) {
+FILE_ATTR FAT_getAttr(PARTITION *partition, const char *file) {
 	DIR_ENTRY dirEntry;
 	if (!_FAT_findEntry(partition,file,&dirEntry)) return -1;
 	 
 	return dirEntry.entryData[DIR_ENTRY_attributes];
 }
 
-int FAT_setAttr(PARTITION *partition, const char *file, int attr) {
+int FAT_setAttr(PARTITION *partition, const char *file, FILE_ATTR attr) {
 
 	// Defines...
 	DIR_ENTRY_POSITION entryEnd;
@@ -116,12 +116,12 @@ int FAT_setAttr(PARTITION *partition, const char *file, int attr) {
 }
 
 
-int FAT_open(void *fileStruct, PARTITION *partition, const char *path, int flags, int mode) {
+int FAT_open(FILE_STRUCT *fileStruct, PARTITION *partition, const char *path, int flags) {
 	bool fileExists;
 	DIR_ENTRY dirEntry;
 	const char* pathEnd;
 	uint32_t dirCluster;
-	FILE_STRUCT* file = (FILE_STRUCT*) fileStruct;
+	FILE_STRUCT* file = fileStruct;
 
 	if (partition == NULL) {
 		errno = ENODEV;

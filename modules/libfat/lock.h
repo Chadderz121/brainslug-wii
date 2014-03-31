@@ -29,44 +29,31 @@
 #ifndef _LOCK_H
 #define _LOCK_H
 
+#include <rvl/OSMutex.h>
+
 #include "common.h"
 
-#ifdef USE_LWP_LOCK
+typedef OSMutex_t mutex_t;
 
 static inline void _FAT_lock_init(mutex_t *mutex)
 {
-	LWP_MutexInit(mutex, false);
+	OSInitMutex(mutex);
 }
 
 static inline void _FAT_lock_deinit(mutex_t *mutex)
 {
-	LWP_MutexDestroy(*mutex);
+	return;
 }
 
 static inline void _FAT_lock(mutex_t *mutex)
 {
-	LWP_MutexLock(*mutex);
+    OSLockMutex(mutex);
 }
 
 static inline void _FAT_unlock(mutex_t *mutex)
 {
-	LWP_MutexUnlock(*mutex);
+	OSUnlockMutex(mutex);
 }
-
-#else
-
-// We still need a blank lock type
-#ifndef mutex_t
-typedef int mutex_t;
-#endif
-
-void _FAT_lock_init(mutex_t *mutex);
-void _FAT_lock_deinit(mutex_t *mutex);
-void _FAT_lock(mutex_t *mutex);
-void _FAT_unlock(mutex_t *mutex);
-
-#endif // USE_LWP_LOCK
-
 
 #endif // _LOCK_H
 

@@ -39,7 +39,7 @@
 #include "common.h"
 #include "disc.h"
 
-typedef struct {
+typedef struct CACHE_ENTRY {
 	sec_t        sector;
 	unsigned int count;
 	unsigned int last_access;
@@ -47,7 +47,7 @@ typedef struct {
 	uint8_t     *cache;
 } CACHE_ENTRY;
 
-typedef struct {
+typedef struct CACHE {
 	const DISC_INTERFACE* disc;
 	sec_t		          endOfPartition;
 	unsigned int          numberOfPages;
