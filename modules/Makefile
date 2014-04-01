@@ -8,6 +8,7 @@
 MODULES += console-gx
 MODULES += console-sd
 MODULES += gecko
+MODULES += https
 MODULES += libfat
 MODULES += libfat-sd
 MODULES += libsd
