@@ -28,21 +28,26 @@
 #ifndef _FCNTL_H_
 #define _FCNTL_H_
 
-#define	_FREAD		0x0001	/* read enabled */
-#define	_FWRITE		0x0002	/* write enabled */
-#define	_FAPPEND	0x0008	/* append (writes guaranteed at the end) */
-#define	_FCREAT		0x0200	/* open with file create */
-#define	_FTRUNC		0x0400	/* open with truncation */
-#define	_FEXCL		0x0800	/* error on open if file exists */
-#define	_FSYNC		0x2000	/* do all writes synchronously */
+#define _FREAD      0x0001  /* read enabled */
+#define _FWRITE     0x0002  /* write enabled */
+#define _FAPPEND    0x0008  /* append (writes guaranteed at the end) */
+#define _FCREAT     0x0200  /* open with file create */
+#define _FTRUNC     0x0400  /* open with truncation */
+#define _FEXCL      0x0800  /* error on open if file exists */
+#define _FSYNC      0x2000  /* do all writes synchronously */
 
-#define	O_RDONLY	0
-#define	O_WRONLY	1
-#define	O_RDWR		2
-#define	O_APPEND	_FAPPEND
-#define	O_CREAT		_FCREAT
-#define	O_TRUNC		_FTRUNC
-#define	O_EXCL		_FEXCL
-#define O_SYNC		_FSYNC
+#define O_RDONLY    0
+#define O_WRONLY    1
+#define O_RDWR      2
+#define O_APPEND    _FAPPEND
+#define O_CREAT     _FCREAT
+#define O_TRUNC     _FTRUNC
+#define O_EXCL      _FEXCL
+#define O_SYNC      _FSYNC
+
+#define O_NONBLOCK  0x0800 /* non blocking (sockets only) */
+
+#define F_GETFL     3   /* Get file flags */
+#define F_SETFL     4   /* Set file flags */
 
 #endif /* _FCNTL_H_ */

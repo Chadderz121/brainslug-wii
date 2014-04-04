@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols relating to user controlled networking -->
+<symbols>
+    <symbol name="SOInit" size="0x1c8" offset="0x50">
+        <data>
+            2C000003 4080000C 3BE0FFF9 48000130
+        </data>
+    </symbol>
+    <symbol name="SOFinish" size="0xfc" offset="0x3c">
+        <data>
+            2C000003 40800080 48000078 3BE0FFF9
+        </data>
+    </symbol>
+    <symbol name="SOStartup" size="0x434" offset="0x18">
+        <data>
+            7C6E1B78 3A000000 3A200000 41820034
+        </data>
+    </symbol>
+    <symbol name="SOCleanup" size="0x1b0" offset="0x48">
+        <data>
+            3BC0FFD9 48000124 3BC0FFF9 4800011C
+        </data>
+    </symbol>
+    <symbol name="__SOSocket" size="0xd4" offset="0x70">
+        <data>
+            7FC5F378 3880000F 38C0000C 93A30004
+        </data>
+    </symbol>
+    <symbol name="SOSocket" size="0xf0" offset="0x78">
+        <data>
+            7C7F1B78 4082000C 3BC0FFCF 48000040
+        </data>
+    </symbol>
+    <symbol name="SOClose" size="0xa4" offset="0x24">
+        <data>
+            2C030000 40820064 3860000C 38800020
+        </data>
+    </symbol>
+    <symbol name="SOBind" size="0xe8" offset="0x98">
+        <data>
+            38800002 38C00024 38E00000 39000000
+        </data>
+    </symbol>
+    <symbol name="SOConnect" size="0xe8" offset="0x98">
+        <data>
+            38800004 38C00024 38E00000 39000000
+        </data>
+    </symbol>
+    <symbol name="SOFcntl" size="0x130" offset="0xd0">
+        <data>
+            38800005 38C0000C 93A30004 38E00000
+        </data>
+    </symbol>
+    <symbol name="SOShutdown" size="0xb4" offset="0x5c">
+        <data>
+            3880000E 38C00008 93E30004 38E00000
+        </data>
+    </symbol>
+    <symbol name="SOPoll" size="0x15c" offset="0xf8">
+        <data>
+            7F47D378 7FA8EB78 3880000B 38C00008
+        </data>
+    </symbol>
+    <symbol name="SOInetAtoN" size="0x10c" offset="0x4c">
+        <data>
+            38030040 3860000C 541F0034 7FE4FB78
+        </data>
+    </symbol>
+    <symbol name="SOInetNtoA" size="0x54" offset="0x18">
+        <data>
+            88E80002 93E1000C 3FE0
+        </data>
+    </symbol>
+    <!-- there are two versions of SOiRecvFrom. Sadly the only differ in the
+         early instructions, so matching directly would be difficult. Thus we
+         are naughty and rely on method order. -->
+    <symbol name="SOiRecvFrom" size="0x2b8" offset="-0x14">
+        <data>
+            5463043E 4E800020 4E800020 5463043E
+        </data>
+    </symbol>
+    <symbol name="SOiSendTo" size="0x22c" offset="0x4c">
+        <data>
+            41810008 4080000C 3B00FFE4 480001B0
+        </data>
+    </symbol>
+    <symbol name="SOGetSockName" size="0xfc" offset="0x30">
+        <data>
+            2C1B0000 41820014 887B0000 28030008
+        </data>
+    </symbol>
+    <symbol name="SOGetHostID" size="0x78" offset="0x30">
+        <data>
+            80610008 38800010 38A00000 38C00000
+        </data>
+    </symbol>
+    <symbol name="SOGetHostByName" size="0x140" offset="0x34">
+        <data>
+            4082000C 3BA0FFE4 480000DC 7F43D378
+        </data>
+    </symbol>
+    <symbol name="SOGetAddrInfo" size="0x2e4" offset="0x38">
+        <data>
+            2C1A0000 4082000C 3BA00000 48000010
+        </data>
+    </symbol>
+    <symbol name="SOFreeAddrInfo" size="0x64" offset="0x30">
+        <data>
+            41820014 7FC4F378 3860000A 38A00840
+        </data>
+    </symbol>
+    <symbol name="SOSetSockOpt" size="0x104" offset="0x4c">
+        <data>
+            3BE0FFE4 48000090 3860000C 38800040
+        </data>
+    </symbol>
+    <symbol name="SOGetInterfaceOpt" size="0x1dc" offset="0x40">
+        <data>
+            28000001 4181000C 3B80FFE4 48000168
+        </data>
+    </symbol>
+</symbols>
