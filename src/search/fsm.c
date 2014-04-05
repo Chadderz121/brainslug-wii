@@ -90,7 +90,7 @@ fsm_t *FSM_Create(symbol_index_t symbol_index) {
         fsm_node_t *fallback;
     } fsm_node_build_queue_t;
     
-    /* This algortihm warrants explanation. We're trying to create an FSM which
+    /* This algorithm warrants explanation. We're trying to create an FSM which
      * matches data, subject to masking from bits mask. Therefore, we advance
      * through data creating a node for each nibble. We must always consider
      * what to do if the nibble we encounter does not match the data. Therefore,
@@ -114,7 +114,7 @@ fsm_t *FSM_Create(symbol_index_t symbol_index) {
     
     assert(symbol_index != SYMBOL_NULL);
 
-    symbol = Symbol_GetSymbol(symbol_index);
+    symbol = Symbol_GetSymbolSize(symbol_index);
     
     assert(symbol);
 
@@ -300,7 +300,7 @@ fsm_t *FSM_Create(symbol_index_t symbol_index) {
         assert(current->node);
         assert(current->fallback);
                 
-        current->node->symbol = symbol_index;
+        current->node->symbol = symbol->index;
         current->node->payload.next = fallback;
     }
     

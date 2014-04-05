@@ -60,6 +60,7 @@ typedef struct {
 extern symbol_index_t symbol_count;
 
 symbol_t *Symbol_GetSymbol(symbol_index_t index);
+symbol_t *Symbol_GetSymbolSize(symbol_index_t index);
 symbol_t *Symbol_GetSymbolAlphabetical(symbol_alphabetical_index_t index);
 symbol_alphabetical_index_t Symbol_SearchSymbol(const char *name);
 bool Symbol_ParseFile(FILE *file);
