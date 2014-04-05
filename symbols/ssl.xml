@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols relating to ssl networking -->
+<symbols>
+    <!-- an old version of this is shorter -->
+    <symbol name="SSLNew" size="0x158" offset="0x28">
+        <data>
+            7C9D2378 38800000 938CFFF0 7C7C1B78
+        </data>
+    </symbol>
+    <symbol name="SSLConnect" size="0xc8" offset="0x6c">
+        <data>
+            38800002 93C10040 38A00001 38C00002
+        </data>
+    </symbol>
+    <symbol name="SSLDoHandshake" size="0xac" offset="0x60">
+        <data>
+            38800003 38A00001 93C10040 38C00001
+        </data>
+    </symbol>
+    <!-- an old version of this is shorter -->
+    <symbol name="SSLRead" size="0x2d0" offset="0x40">
+        <data>
+            7C7F1B78 3B40FFFF 4080000C 3860FFFF
+        </data>
+    </symbol>
+    <!-- an old version of this is shorter -->
+    <symbol name="SSLWrite" size="0x2c0" offset="0x40">
+        <data>
+            7C7F1B78 3B60FFFF 4080000C 3860FFFF
+        </data>
+    </symbol>
+    <symbol name="SSLShutdown" size="0xac" offset="0x60">
+        <data>
+            38800006 38A00001 93C10040 38C00001
+        </data>
+    </symbol>
+    <symbol name="SSLSetClientCert" size="0x16c" offset="0x108">
+        <data>
+            38800007 93010020 38A00001 38C00003
+        </data>
+    </symbol>
+    <symbol name="SSLSetRootCA" size="0x148" offset="0xf0">
+        <data>
+            3880000A 38A00001 38C00002 91410060
+        </data>
+    </symbol>
+    <!-- these are a bit hit and miss as to which games have them -->
+    <symbol name="SSLSetRootCADefault" size="0xac" offset="0x60">
+        <data>
+            3880000B 38A00001 93C10020 38C00001
+        </data>
+    </symbol>
+    <symbol name="SSLSetBuiltinRootCA" size="0xc8" offset="0x6c">
+        <data>
+            3880000D 90A10060 38A00001 38C00002
+        </data>
+    </symbol>
+    <symbol name="SSLSetBuiltinClientCert" size="0xc8" offset="0x6c">
+        <data>
+            3880000E 90A10060 38A00001 38C00002
+        </data>
+    </symbol>
+</symbols>
