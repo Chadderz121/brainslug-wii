@@ -281,31 +281,4 @@ int SymbolTest_Parse3(void) {
         
     return 0;
 }
-/* test in the vain hope of finding a segfault with this particular xml */
-int SymbolTest_Full0(void) {
-    FILE *file;
-    extern symbol_t fsm_test_symbol[4];
 
-    file = fopen("../symbols/ipc.xml", "r");
-
-    if (!file)
-        return 6;
-    if (!Symbol_ParseFile(file))
-        return 101;
-    if (symbol_count != 4)
-        return 102;
-
-    fsm_test_symbol[0] = *Symbol_GetSymbol(0);
-    fsm_test_symbol[1] = *Symbol_GetSymbol(1);
-    fsm_test_symbol[2] = *Symbol_GetSymbol(2);
-    fsm_test_symbol[3] = *Symbol_GetSymbol(3);
-    
-    FSM_Merge(
-        FSM_Merge(
-            FSM_Merge(
-                FSM_Create(0), FSM_Create(1)),
-            FSM_Create(2)),
-        FSM_Create(3));
-        
-    return 0;
-}

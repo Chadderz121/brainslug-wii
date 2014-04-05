@@ -46,7 +46,6 @@ test_t tests[] = {
     SymbolTest_Parse1,
     SymbolTest_Parse2,
     SymbolTest_Parse3,
-    SymbolTest_Full0,
 };
 
 #define TEST_COUNT (sizeof(tests) / sizeof(*tests))

@@ -26,6 +26,7 @@
 #include "../src/search/symbol.h"
 
 #define Symbol_GetSymbol(index) (&fsm_test_symbol[index])
+#define Symbol_GetSymbolSize(index) (&fsm_test_symbol[index])
 
 symbol_t fsm_test_symbol[4];
 
@@ -155,6 +156,7 @@ int FSMTest_Create0(void) {
     uint8_t mask[] = { 0xff, 0xff, 0xff, 0xff };
 
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data;
     sym->mask = mask;
     sym->data_size = sizeof(data);
@@ -175,6 +177,7 @@ int FSMTest_Create1(void) {
     uint8_t mask[] = { 0xff, 0xff, 0xff, 0xff };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data;
     sym->mask = mask;
     sym->data_size = sizeof(data);
@@ -195,6 +198,7 @@ int FSMTest_Create2(void) {
     uint8_t mask[] = { 0x00, 0xff, 0xff, 0x00 };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data;
     sym->mask = mask;
     sym->data_size = sizeof(data);
@@ -215,6 +219,7 @@ int FSMTest_Create3(void) {
     uint8_t mask[] = { 0x00, 0xff, 0xff, 0x00 };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data;
     sym->mask = mask;
     sym->data_size = sizeof(data);
@@ -235,6 +240,7 @@ int FSMTest_Create4(void) {
     uint8_t mask[] = { 0xf0, 0xf0, 0xf0, 0xf0 };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data;
     sym->mask = mask;
     sym->data_size = sizeof(data);
@@ -257,11 +263,13 @@ int FSMTest_Merge0(void) {
     uint8_t mask2[] = { 0xff, 0xff, 0xff, 0xff };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data1;
     sym->mask = mask1;
     sym->data_size = sizeof(data1);
     
     sym = Symbol_GetSymbol(1);
+    sym->index = 1;
     sym->data = data2;
     sym->mask = mask2;
     sym->data_size = sizeof(data2);
@@ -294,11 +302,13 @@ int FSMTest_Merge1(void) {
     uint8_t mask2[] = { 0xff, 0x00, 0x00, 0xff };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data1;
     sym->mask = mask1;
     sym->data_size = sizeof(data1);
     
     sym = Symbol_GetSymbol(1);
+    sym->index = 1;
     sym->data = data2;
     sym->mask = mask2;
     sym->data_size = sizeof(data2);
@@ -340,6 +350,7 @@ int FSMTest_Run0(void) {
     uint8_t test[] = { 0x00, 0x01, 0x02, 0x03 };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data;
     sym->mask = mask;
     sym->data_size = sizeof(data);
@@ -372,6 +383,7 @@ int FSMTest_Run1(void) {
     uint8_t test[] = { 0x00, 0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x02, 0x03 };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data;
     sym->mask = mask;
     sym->data_size = sizeof(data);
@@ -406,6 +418,7 @@ int FSMTest_Run2(void) {
     uint8_t test[] = { 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x02, 0x03 };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data;
     sym->mask = mask;
     sym->data_size = sizeof(data);
@@ -440,6 +453,7 @@ int FSMTest_Run3(void) {
     uint8_t test[] = { 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x03 };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data;
     sym->mask = mask;
     sym->data_size = sizeof(data);
@@ -480,6 +494,7 @@ int FSMTest_Run4(void) {
     uint8_t test[] = { 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x03 };
     
     sym = Symbol_GetSymbol(0);
+    sym->index = 0;
     sym->data = data1;
     sym->mask = mask1;
     sym->data_size = sizeof(data1);
@@ -488,6 +503,7 @@ int FSMTest_Run4(void) {
     sym->size = 0;
     
     sym = Symbol_GetSymbol(1);
+    sym->index = 1;
     sym->data = data2;
     sym->mask = mask2;
     sym->data_size = sizeof(data2);

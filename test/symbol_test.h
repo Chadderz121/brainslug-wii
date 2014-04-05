@@ -29,6 +29,5 @@ int SymbolTest_Parse0(void);
 int SymbolTest_Parse1(void);
 int SymbolTest_Parse2(void);
 int SymbolTest_Parse3(void);
-int SymbolTest_Full0(void);
 
 #endif /* SYMBOL_TEST_H_*/
