@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the <rvl/sha.h> header -->
+<symbols>
+    <symbol name="SHA1Init" size="0x50" offset="0x20">
+        <data>
+            38C6DCFE 38A55476 3804E1F0 91230058
+        </data>
+    </symbol>
+    <symbol name="SHA1Update" size="0xb4" offset="0x2c">
+        <data>
+            23C00040 7C1EE840 40810008 7FBEEB78
+        </data>
+    </symbol>
+    <symbol name="SHA1Final" size="0x12c" offset="0x5c">
+        <data>
+            20A00040 28050008 40800010 7FC3F378
+        </data>
+    </symbol>
+</symbols>
