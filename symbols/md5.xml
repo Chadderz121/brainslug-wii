@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the <rvl/md5.h> header -->
+<symbols>
+    <symbol name="MD5Init" size="0x40" offset="0x0">
+        <data>
+            3CE06745 3CC0EFCE 38000000 3CA098BB
+        </data>
+    </symbol>
+    <symbol name="MD5Update" size="0xf0" offset="0x40">
+        <data>
+            23E70040 7C1F2840 90030010 4081001C
+        </data>
+    </symbol>
+    <symbol name="MD5Final" size="0x128" offset="0x48">
+        <data>
+            540006BE 20A00040 28050008 40800024
+        </data>
+    </symbol>
+</symbols>
