@@ -61,7 +61,7 @@ typedef int (*device_file_close_t)(int fd);
 typedef struct device_file {
 } device_file_t;
 
-typedef struct file {
+typedef struct FILE {
     int fd; /* 0x00 */
     unsigned char unknown04[0x1c - 0x04]; /* 0x04 */
     void *buffer; /* 0x1c */
