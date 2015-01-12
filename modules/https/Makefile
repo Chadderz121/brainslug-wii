@@ -46,12 +46,12 @@ INC_DIRS += $(LIB_INC_DIRS)
 # Compiler settings
 
 # The toolchain to use.
-PREFIX  = powerpc-eabi-
+PREFIX  ?= powerpc-eabi-
 # Tools to use
-AS      = $(PREFIX)as
-LD      = $(PREFIX)ld
-CC      = $(PREFIX)g++
-OBJDUMP = $(PREFIX)objdump
+AS      := $(PREFIX)as
+LD      := $(PREFIX)ld
+CC      := $(PREFIX)g++
+OBJDUMP := $(PREFIX)objdump
 
 # --relocatable: make sure ld doesn't remove relocations bslug will need
 # -s: strip local symbols to speed linking
@@ -78,6 +78,7 @@ LD1FLAGS += --relocatable -s \
 # -meabi: enable eabi specific compilation
 # -mhard-float: enable hardware floating point instructions
 # -fshort-wchar: use 16 bit whcar_t type in keeping with Wii executables
+# -fno-common: stop common variables which the loader can't understand
 # -msdata-none: do not use r2 or r13 as small data areas
 # -memb: enable embedded application specific compilation
 # -ffunction-sections: split up functions so linker can garbage collect
@@ -85,7 +86,7 @@ LD1FLAGS += --relocatable -s \
 CFLAGS   += -O2 -Wall -x c -std=gnu99 \
 			-nostdinc -ffreestanding \
             -DGEKKO -DHW_RVL -D__wii__ \
-            -mrvl -mcpu=750 -meabi -mhard-float -fshort-wchar \
+            -mrvl -mcpu=750 -meabi -mhard-float -fshort-wchar -fno-common \
             -msdata=none -memb -ffunction-sections -fdata-sections
 
 ifdef DEBUG
@@ -119,29 +120,27 @@ OBJECTS := $(patsubst %.c,$(BUILD)/%.c.o,$(filter %.c,$(SRC)))
 # Special build rules
 
 # Rule to make the module file.
-$(TARGET) : $(BUILD)/output.elf $(BIN)
+$(TARGET) : $(BUILD)/output.elf | $(BIN)
 	$(LOG)
-	-$Qmkdir -p $(dir $@)
 	$Q$(LD) $(BUILD)/output.elf $(LDFLAGS) -o $@ 
 
 # Rule to make the module file.
-$(BUILD)/output.elf : $(OBJECTS) $(BUILD)
+$(BUILD)/output.elf : $(OBJECTS) | $(BIN) $(BUILD)
 	$(LOG)
-	-$Qmkdir -p $(dir $@)
 	$Q$(LD) $(OBJECTS) $(LD1FLAGS) -o $@ 
 	
 # Rule to make intermediate directory
 $(BUILD) : 
-	-$Qmkdir $@
+	$Qmkdir $@
 
 # Rule to make output directory
 $(BIN) : 
-	-$Qmkdir $@
+	$Qmkdir $@
 
 ###############################################################################
 # Standard build rules
 
-$(BUILD)/%.c.o: %.c
+$(BUILD)/%.c.o: %.c | $(BUILD)
 	$(LOG)
 	-$Qmkdir -p $(dir $@)
 	$Q$(CC) -c $(CFLAGS) $< -o $@
@@ -165,8 +164,7 @@ list  : $(LIST)
 # Rule to clean files.
 PHONY += clean
 clean : 
-	-$Qrm -rf $(BUILD)
-	-$Qrm -rf $(BIN)
+	$Qrm -rf $(wildcard $(BUILD) $(BIN))
 
 ###############################################################################
 # Phony targets

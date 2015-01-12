@@ -36,18 +36,19 @@ all: $(addsuffix _module,$(MODULES))
 PHONY += install
 install : $(addsuffix _module_install,$(MODULES))
 	
-%_module_install: $(BSLUGDIR)/modules
+%_module_install: | $(BSLUGDIR)/modules
 	$(LOG)
+	$(addprefix $Qrm -rf ,$(wildcard $(BSLUGDIR)/modules/$*))
 	$Qcp -r $* $(BSLUGDIR)/modules
 	
 $(BSLUGDIR)/modules:
-	-$Qmkdir $(BSLUGDIR)/modules
+	$Qmkdir $(BSLUGDIR)/modules
 
 # Rule to install bslug.
 PHONY += uninstall
 uninstall : 
 	$(LOG)
-	-$Qrm -rf $(BSLUGDIR)/modules
+	$(addprefix $Qrm -rf ,$(wildcard $(BSLUGDIR)/modules))
 
 ###############################################################################
 # Clean rule

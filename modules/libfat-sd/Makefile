@@ -46,12 +46,12 @@ INC_DIRS += $(LIB_INC_DIRS)
 # Compiler settings
 
 # The toolchain to use.
-PREFIX  = powerpc-eabi-
+PREFIX  ?= powerpc-eabi-
 # Tools to use
-AS      = $(PREFIX)as
-LD      = $(PREFIX)ld
-CC      = $(PREFIX)g++
-OBJDUMP = $(PREFIX)objdump
+AS      := $(PREFIX)as
+LD      := $(PREFIX)ld
+CC      := $(PREFIX)g++
+OBJDUMP := $(PREFIX)objdump
 
 # --relocatable: make sure ld doesn't remove relocations bslug will need
 # -s: strip local symbols to speed linking
@@ -120,29 +120,27 @@ OBJECTS := $(patsubst %.c,$(BUILD)/%.c.o,$(filter %.c,$(SRC)))
 # Special build rules
 
 # Rule to make the module file.
-$(TARGET) : $(BUILD)/output.elf $(BIN)
+$(TARGET) : $(BUILD)/output.elf | $(BIN)
 	$(LOG)
-	-$Qmkdir -p $(dir $@)
 	$Q$(LD) $(BUILD)/output.elf $(LDFLAGS) -o $@ 
 
 # Rule to make the module file.
-$(BUILD)/output.elf : $(OBJECTS) $(BUILD)
+$(BUILD)/output.elf : $(OBJECTS) | $(BIN) $(BUILD)
 	$(LOG)
-	-$Qmkdir -p $(dir $@)
 	$Q$(LD) $(OBJECTS) $(LD1FLAGS) -o $@ 
 	
 # Rule to make intermediate directory
 $(BUILD) : 
-	-$Qmkdir $@
+	$Qmkdir $@
 
 # Rule to make output directory
 $(BIN) : 
-	-$Qmkdir $@
+	$Qmkdir $@
 
 ###############################################################################
 # Standard build rules
 
-$(BUILD)/%.c.o: %.c
+$(BUILD)/%.c.o: %.c | $(BUILD)
 	$(LOG)
 	-$Qmkdir -p $(dir $@)
 	$Q$(CC) -c $(CFLAGS) $< -o $@
@@ -166,8 +164,7 @@ list  : $(LIST)
 # Rule to clean files.
 PHONY += clean
 clean : 
-	-$Qrm -rf $(BUILD)
-	-$Qrm -rf $(BIN)
+	$Qrm -rf $(wildcard $(BUILD) $(BIN))
 
 ###############################################################################
 # Phony targets
