@@ -92,8 +92,7 @@ CFLAGS   += -O2 -Wall -x c -std=gnu99 \
 
 ifdef DEBUG
 else
-  CFLAGS += -DNDEBUG -flto
-  LDFLAGS += -flto
+  CFLAGS += -DNDEBUG
 endif
 
 ###############################################################################
