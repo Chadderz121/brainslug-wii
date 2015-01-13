@@ -17,10 +17,11 @@ ifeq ($(strip $(DEVKITPPC)),)
 endif
 
 BSLUGDIR := $(DEVKITPRO)/bslug
+GCC_VER := $(shell $(DEVKITPPC)/bin/powerpc-eabi-gcc -dumpversion)
 
 PATH := $(DEVKITPPC)/bin:$(PATH)
-LIB_INC_DIRS := $(DEVKITPPC)/lib/gcc/powerpc-eabi/4.6.3/include \
-                $(DEVKITPPC)/lib/gcc/powerpc-eabi/4.6.3/include-fixed \
+LIB_INC_DIRS := $(DEVKITPPC)/lib/gcc/powerpc-eabi/$(GCC_VER)/include \
+                $(DEVKITPPC)/lib/gcc/powerpc-eabi/$(GCC_VER)/include-fixed \
                 $(BSLUGDIR)/include
 
 include makefile.mk
