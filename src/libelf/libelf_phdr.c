@@ -38,7 +38,7 @@ ELFTC_VCSID("$Id: libelf_phdr.c 2225 2011-11-26 18:55:54Z jkoshy $");
 void *
 _libelf_getphdr(Elf *e, int ec)
 {
-	size_t phnum, phentsize;
+	size_t phnum, phentsize __attribute__((unused));
 	size_t fsz, msz;
 	uint64_t phoff;
 	Elf32_Ehdr *eh32;

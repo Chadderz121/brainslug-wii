@@ -100,7 +100,7 @@ static module_metadata_t *Module_MetadataRead(
 static bool Module_ElfLoadSection(
     const Elf *elf, Elf_Scn *scn, const Elf32_Shdr *shdr, void *destination);
 static void Module_ElfLoadSymbols(
-    size_t shndx, const const void *destination, 
+    size_t shndx, const void *destination, 
     Elf32_Sym *symtab, size_t symtab_count);
 static bool Module_ElfLink(
     size_t index, Elf *elf, size_t shndx, void *destination,
@@ -821,7 +821,7 @@ static bool Module_ElfLoadSection(
 }
 
 static void Module_ElfLoadSymbols(
-        size_t shndx, const const void *destination,
+        size_t shndx, const void *destination,
         Elf32_Sym *symtab, size_t symtab_count) {
     
     size_t i;

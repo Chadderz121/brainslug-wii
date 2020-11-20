@@ -502,7 +502,7 @@ _libelf_resync_sections(Elf *e, off_t rc, struct _Elf_Extent_List *extents)
 static off_t
 _libelf_resync_elf(Elf *e, struct _Elf_Extent_List *extents)
 {
-	int ec, eh_class, eh_type;
+	int ec, eh_class, eh_type __attribute__((unused));
 	unsigned int eh_byteorder, eh_version;
 	size_t align, fsz;
 	size_t phnum, shnum;
@@ -707,7 +707,7 @@ _libelf_write_scn(Elf *e, char *nf, struct _Elf_Extent *ex)
 {
 	int ec;
 	Elf_Scn *s;
-	int elftype;
+	int elftype __attribute__((unused));
 	Elf_Data *d, dst;
 	uint32_t sh_type;
 	struct _Libelf_Data *ld;
@@ -922,9 +922,9 @@ static off_t
 _libelf_write_shdr(Elf *e, char *nf, struct _Elf_Extent *ex)
 {
 	int ec;
-	void *ehdr;
+	void *ehdr __attribute__((unused));
 	Elf_Scn *scn;
-	uint64_t shoff;
+	uint64_t shoff __attribute__((unused));
 	Elf32_Ehdr *eh32;
 	Elf64_Ehdr *eh64;
 	size_t fsz, nscn;
