@@ -2,6 +2,7 @@ To build the BrainSlug channel you must first have a copy of devkitPro:
     http://sourceforge.net/projects/devkitpro/
 You must also have libmxml for devkitPro, which can be found here:
     http://wiibrew.org/wiki/Mini-XML
+You also need to have libfat installed.
 
 In the root directory of the BrainSlug repository, run the commands:
     make
