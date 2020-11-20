@@ -2,6 +2,7 @@
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
+ * Copyright (C) 2020, Florian Bach
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +23,19 @@
  * SOFTWARE.
  */
 
+// This is the main apploader code. It runs when Brainslug has successfully
+// switched to the IOS requested by the game, and is then responsible
+// for continuing to read the disc and load the game. 
+
 #include "apploader.h"
 
 #include <errno.h>
 #include <ogc/cache.h>
 #include <ogc/lwp.h>
 #include <ogc/lwp_watchdog.h>
+#include <ogc/video.h>
+#include <ogc/video_types.h>
+#include <ogc/conf.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -38,16 +46,6 @@
 #include "library/event.h"
 #include "modules/module.h"
 #include "threads.h"
-
-typedef struct {
-    uint32_t boot_info_count;
-    uint32_t partition_info_offset;
-} contents_t;
-
-typedef struct {
-    uint32_t offset;
-    uint32_t type;
-} partition_info_t;
 
 // types for the four methods called on the game's apploader
 typedef void (*apploader_report_t)(const char *format, ...);
@@ -67,10 +65,12 @@ uint8_t *apploader_app0_end = NULL;
 uint8_t *apploader_app1_start = NULL;
 uint8_t *apploader_app1_end = NULL;
 
+uint8_t apploader_try_force_IOS = 0; 
+
 #define APPLOADER_APP0_BOUNDARY ((void *)0x81200000)
 #define APPLOADER_APP1_BOUNDARY ((void *)0x81400000)
 
-static u32 apploader_ipc_tmd[0x4A00 / 4] ATTRIBUTE_ALIGN(32);
+// static u32 apploader_ipc_tmd[0x4A00 / 4] ATTRIBUTE_ALIGN(32);
 
 static void *Aploader_Main(void *arg);
 
@@ -80,9 +80,11 @@ bool Apploader_Init(void) {
         Event_Init(&apploader_event_complete);
 }
 
-bool Apploader_RunBackground(void) {
+bool Apploader_RunBackground(int tryForceIOS) {
     int ret;
     lwp_t thread;
+
+    apploader_try_force_IOS = tryForceIOS;
     
     ret = LWP_CreateThread(
         &thread, &Aploader_Main,
@@ -97,22 +99,76 @@ bool Apploader_RunBackground(void) {
 }
 
 void Apploader_Report(const char *format, ...) {
-#if 0
+
+#if (0)
     /* debugging code, uncomment to display apploader logging messages */
     va_list args;
 
     va_start(args, format);
-    vprintf(message, sizeof(message), format, args);
+    vprintf(format, args);
     va_end(args);
+
 #endif
 }
+
+void video_mode_fix() {
+
+    /* Get video mode configuration */
+    bool progressive = (CONF_GetProgressiveScan() > 0) && VIDEO_HaveComponentCable();
+    bool PAL60 = CONF_GetEuRGB60() > 0;
+    u32 tvmode = CONF_GetVideo();
+
+    int r_rmode_reg = 0;
+    void * r_rmode = VIDEO_GetPreferredMode(0);;
+
+    switch (tvmode) {
+        case CONF_VIDEO_PAL:
+            r_rmode_reg = PAL60 ? VI_EURGB60 : VI_PAL;
+            r_rmode = progressive ? &TVEurgb60Hz480Prog : (PAL60 ? &TVEurgb60Hz480IntDf : &TVPal528IntDf);
+            break;
+
+        case CONF_VIDEO_MPAL:
+            r_rmode_reg = VI_MPAL;
+            r_rmode = progressive ? &TVEurgb60Hz480Prog : &TVMpal480IntDf;
+            break;
+
+        case CONF_VIDEO_NTSC:
+            r_rmode_reg = VI_NTSC;
+            r_rmode = progressive ? &TVNtsc480Prog : &TVNtsc480IntDf;
+            break;
+    }
+
+    switch (os0->disc.gamename[3]) {
+        case 'D':
+        case 'F':
+        case 'P':
+        case 'X':
+        case 'Y':
+            r_rmode_reg = PAL60 ? VI_EURGB60 : VI_PAL;
+            r_rmode = progressive ? &TVEurgb60Hz480Prog : (PAL60 ? &TVEurgb60Hz480IntDf : &TVPal528IntDf);
+            break;
+        case 'E':
+        case 'J': 
+            r_rmode_reg = VI_NTSC;
+            r_rmode = progressive ? &TVNtsc480Prog : &TVNtsc480IntDf;
+
+    }
+
+    (*(volatile unsigned int *)0x800000cc) = r_rmode_reg;
+    DCFlushRange((void *)0x800000cc, 4);
+
+    if (r_rmode != 0) {
+        VIDEO_Configure(r_rmode);
+    }
+
     
+
+}
+
 static void *Aploader_Main(void *arg) {
     int ret, i;
-    contents_t ipc_toc[4] ATTRIBUTE_ALIGN(32);
     partition_info_t ipc_partition_info[4] ATTRIBUTE_ALIGN(32);
     uint32_t ipc_buffer[8] ATTRIBUTE_ALIGN(32);
-    partition_info_t *boot_partition;
     apploader_init_t fn_init;
     apploader_main_t fn_main;
     apploader_final_t fn_final;
@@ -122,30 +178,26 @@ static void *Aploader_Main(void *arg) {
         ret = DI_Init();
     } while (ret);
     
+    // Clear old disc ID
+    memset((char*)0x80000000, 0, 6);
+
     do {
-        ret = DI_DiscInserted();
-    } while (ret < 0);
-    if (!ret) {
-        do {
-            ret = DI_DiscWait();
-        } while (ret != 4);
-    }
-    
-    do {
-        ret = DI_Reset();
-    } while (ret < 0);
-    
-    Event_Trigger(&apploader_event_disk_id);
+        ret = DI_ReadDiscID();
+    } while (ret);
+
     
     do {
         ret = DI_ReadUnencrypted(ipc_toc, sizeof(ipc_toc), 0x00010000);
     } while (ret < 0);
+
     DCInvalidateRange(ipc_toc, sizeof(ipc_toc));
+    
     do {
         ret = DI_ReadUnencrypted(
             ipc_partition_info, sizeof(ipc_partition_info),
             ipc_toc->partition_info_offset);
     } while (ret < 0);
+    
     
     boot_partition = NULL;
     for (i = 0; i < ipc_toc->boot_info_count; i++) {
@@ -153,13 +205,13 @@ static void *Aploader_Main(void *arg) {
             boot_partition = &ipc_partition_info[i];
         }
     }
-    
+
     do {
         ret = DI_PartitionOpen(
             boot_partition->offset, (void *)apploader_ipc_tmd);
     } while (ret < 0);
     
-#if 0
+    #if 0
     /* debugging code */
     {
         tmd *dvd_tmd;
@@ -171,15 +223,15 @@ static void *Aploader_Main(void *arg) {
             (int)(dvd_tmd->title_id >> 32), (char *)&dvd_tmd->title_id + 4,
             (int)(dvd_tmd->sys_version >> 32), (int)dvd_tmd->sys_version);
     }
-#endif
+    #endif
+    
     
     do {
         ret = DI_Read(ipc_buffer, sizeof(ipc_buffer), 0x2440 / 4);
     } while (ret < 0);
     
     do {
-        ret = DI_Read(
-            (void*)0x81200000, (ipc_buffer[5] + 31) & ~31, 0x2460 / 4);
+        ret = DI_Read((void*)0x81200000, (ipc_buffer[5] + 31) & ~31, 0x2460 / 4);
     } while (ret < 0);
     
     fn_entry = (apploader_entry_t)ipc_buffer[4];
@@ -198,6 +250,7 @@ static void *Aploader_Main(void *arg) {
         ret = fn_main(&destination, &length, &offset);
         if (!ret)
             break;
+
         
         if (destination < APPLOADER_APP0_BOUNDARY) {
             uint8_t *range_start, *range_end;
@@ -255,6 +308,9 @@ static void *Aploader_Main(void *arg) {
             os0->threads.tv_mode = OS_TV_MODE_PAL;
             break;
     }
+
+    video_mode_fix();
+       
     
     os0->info.boot_type = OS_BOOT_NORMAL;
     os0->info.version = 1;
@@ -269,11 +325,17 @@ static void *Aploader_Main(void *arg) {
     os0->threads.bus_speed = 0x0E7BE2C0;
     os0->threads.cpu_speed = 0x2B73A840;
     
-    /* FIXME: We don't currently reload IOS. To prevent Error #002 we pretend
-     * like we have. */
-    os1->ios_number = os1->expected_ios_number;
-    os1->ios_revision = os1->expected_ios_revision;
+    // If the IOS the game actually suggested isn't available, 
+    // the variable "apploader_try_force_IOS" will be set to 1. 
+    // In that case, try to tell the game that it is successfully running
+    // under the intended IOS - some games will still work then. 
 
+    if (apploader_try_force_IOS) {
+        os1->ios_number = os1->expected_ios_number;
+        os1->ios_revision = os1->expected_ios_revision;
+    }
+
+    
     os1->fst = os0->info.fst;
     memcpy(os1->application_name, os0->disc.gamename, 4);
 

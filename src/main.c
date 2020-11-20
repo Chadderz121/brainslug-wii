@@ -30,6 +30,7 @@
 #include <ogc/lwp.h>
 #include <ogc/system.h>
 #include <ogc/video.h>
+#include <gccore.h>
 #include <sdcard/wiisd_io.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,6 +46,8 @@ event_t main_event_fat_loaded;
 
 static void Main_PrintSize(size_t size);
 
+short current_running_ios = 0; 
+
 int main(void) {
     int ret;
     void *frame_buffer = NULL;
@@ -57,12 +60,16 @@ int main(void) {
     /* initialise all subsystems */
     if (!Event_Init(&main_event_fat_loaded))
         goto exit_error;
+    if (!IOSApploader_Init())
+        goto exit_error;
     if (!Apploader_Init())
         goto exit_error;
     if (!Module_Init())
         goto exit_error;
     if (!Search_Init())
         goto exit_error;
+
+    current_running_ios = *(short*)0x80003140;
     
     /* main thread is UI, so set thread prior to UI */
     LWP_SetThreadPriority(LWP_GetSelf(), THREAD_PRIO_UI);
@@ -78,14 +85,6 @@ int main(void) {
     console_init(
         frame_buffer, 20, 20, rmode->fbWidth, rmode->xfbHeight,
         rmode->fbWidth * VI_DISPLAY_PIX_SZ);
-
-    /* spawn lots of worker threads to do stuff */
-    if (!Apploader_RunBackground())
-        goto exit_error;
-    if (!Module_RunBackground())
-        goto exit_error;
-    if (!Search_RunBackground())
-        goto exit_error;
         
     VIDEO_Configure(rmode);
     VIDEO_SetNextFramebuffer(frame_buffer);
@@ -106,7 +105,47 @@ int main(void) {
         BSLUG_VERSION_MINOR(BSLUG_LOADER_VERSION),
         BSLUG_VERSION_REVISION(BSLUG_LOADER_VERSION));
     printf(" by Chadderz\n\n");
-   
+
+    /* spawn lots of worker threads to do stuff */
+    if (!IOSApploader_RunBackground())
+        goto exit_error;
+        
+    printf("Waiting for game disk...\n");
+    Event_Wait(&apploader_event_got_disc_id);
+    Event_Wait(&apploader_event_got_ios);
+
+    // Found IOS, reload into that IOS:
+    printf("Game ID: %.4s on IOS%d -> reloading ... ", os0->disc.gamename, _apploader_game_ios);
+    int rval = IOS_ReloadIOS(_apploader_game_ios);
+
+    if (rval < 0) {
+        // IOS reload failed, the needed IOS is probably not installed. 
+
+        printf("\nIt looks like reloading to IOS%d failed (error %d). Maybe it is missing?\n", _apploader_game_ios, rval);
+        printf("Trying to boot the game anyways (under IOS%d), but it might not work correctly.\n", current_running_ios);
+
+        if (!Apploader_RunBackground(1))    // 1 = make the game believe it runs under the correct IOS.
+            goto exit_error;
+
+    }
+    else {
+        // IOS reload successful, wait for IOS to load up. 
+        printf("waiting ... ");
+        while (*(short*)0x80003140 != _apploader_game_ios);
+        printf("done.\n");
+
+        if (!Apploader_RunBackground(0))    // 0 = no need to fool, we are running on the correct IOS.
+            goto exit_error;
+
+    }
+
+    // After the IOS reload, run the rest of the background threads. 
+    if (!Module_RunBackground())
+        goto exit_error;
+    if (!Search_RunBackground())
+        goto exit_error;
+
+       
     if (!__io_wiisd.startup() || !__io_wiisd.isInserted()) {
         printf("Please insert an SD card.\n\n");
         do {
@@ -121,10 +160,7 @@ int main(void) {
     }
     
     Event_Trigger(&main_event_fat_loaded);
-        
-    printf("Waiting for game disk...\n");
-    Event_Wait(&apploader_event_disk_id);
-    printf("Game ID: %.4s\n", os0->disc.gamename);
+
         
     printf("Loading modules...\n");
     Event_Wait(&module_event_list_loaded);

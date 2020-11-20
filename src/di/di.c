@@ -2,6 +2,7 @@
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
+ * Copyright (C) 2020, Florian Bach
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -55,6 +56,8 @@ static int di_fd
 #ifndef NDEBUG
 static bool di_has_partition = false;
 #endif
+static bool isInit = false; 
+
     
 static inline int IOS_Errno(int ret) {
     switch (ret) {
@@ -85,6 +88,7 @@ int DI_Init(void) {
         return -1;
     }
     di_fd = ret;
+    isInit = true;
     
     return 0;
 }
@@ -103,6 +107,7 @@ int DI_Close(void) {
 #ifndef NDEBUG
     di_fd = -1;
 #endif
+    isInit = false;
     return 0;
 }
 
@@ -151,6 +156,8 @@ int DI_DiscWait(void) {
 
 int DI_DiscInserted(void) {
     int ret;
+
+    if (!isInit) return 0;
     
     assert(di_fd != -1);
 
@@ -169,6 +176,36 @@ int DI_DiscInserted(void) {
         return 1;
     else
         return 0;
+}
+
+int DI_ReadDiscID() {
+    int ret; 
+
+    assert (di_fd != -1); 
+
+    di_ipc_in[0] = DI_IOCTL_READ_DISCID << 24; 
+    ret = IOS_Ioctl(
+        di_fd, DI_IOCTL_READ_DISCID, 
+        di_ipc_in, sizeof(di_ipc_in), 
+        (void *)0x80000000, 0x20); 
+
+    return (ret == 1) ? 0 : -ret;
+    
+}
+
+int DI_Only_Reset(void) {
+    int ret;
+    assert(di_fd != -1);
+
+        di_ipc_in[0] = DI_IOCTL_RESET << 24;
+        di_ipc_in[1] = 1;
+        ret = IOS_Ioctl(
+            di_fd, DI_IOCTL_RESET,
+            di_ipc_in, sizeof(di_ipc_in),
+            NULL, 0);
+
+    return (ret == 1) ? 0 : -ret;
+
 }
 
 int DI_Reset(void) {
@@ -243,7 +280,6 @@ int DI_PartitionOpen(uint32_t offset, signed_blob *tmd) {
     int ret;
     
     assert(di_fd != -1);
-    assert(!di_has_partition);
 
     di_ipc_in[0] = DI_IOCTLV_OPEN_PARTITION << 24;
     di_ipc_in[1] = offset;
@@ -261,8 +297,7 @@ int DI_PartitionOpen(uint32_t offset, signed_blob *tmd) {
     ret = IOS_Ioctlv(di_fd, DI_IOCTLV_OPEN_PARTITION, 3, 2, di_ipc_iovector);
     
     if (ret < 0) {
-        errno = IOS_Errno(ret);
-        return -1;
+        return ret;
     }
     
 #ifndef NDEBUG

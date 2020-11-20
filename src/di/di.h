@@ -2,6 +2,7 @@
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
+ * Copyright (C) 2020, Florian Bach
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +34,9 @@ int DI_Close(void);
 int DI_Read(void *buffer, uint32_t length, uint32_t offset);
 int DI_DiscWait(void);
 int DI_DiscInserted(void);
+int DI_ReadDiscID();
 int DI_Reset(void);
+int DI_Only_Reset(void);
 int DI_PartitionOpen(uint32_t offset, signed_blob *tmd);
 int DI_PartitionClose(void);
 int DI_ReadUnencrypted(void *buffer, uint32_t length, uint32_t offset);
