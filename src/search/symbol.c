@@ -416,7 +416,7 @@ static symbol_relocation_t *Symbol_AddRelocation(
         assert(target != NULL);
         name_alloc = malloc(strlen(target) + 1);
         if (name_alloc != NULL) {
-            strncpy(name_alloc, target, strlen(target) + 1);
+            strcpy(name_alloc, target);
             relocation->symbol = name_alloc;
             relocation->type = type;
             relocation->offset = offset;

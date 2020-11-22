@@ -227,8 +227,8 @@ bool _FAT_cache_writePartialSector (CACHE* cache, const void* buffer, sec_t sect
     else
         memset(entry->cache + ((sec*cache->bytesPerSector) + offset),0,size);
         
-	entry->dirty = true;
-	return true;
+    entry->dirty = true;
+    return true;
 }
 
 bool _FAT_cache_writeLittleEndianValue (CACHE* cache, const uint32_t value, sec_t sector, unsigned int offset, int size) {
@@ -262,8 +262,8 @@ bool _FAT_cache_eraseWritePartialSector (CACHE* cache, const void* buffer, sec_t
     if (buffer != NULL)
         memcpy(entry->cache + ((sec*cache->bytesPerSector) + offset),buffer,size);
 
-	entry->dirty = true;
-	return true;
+    entry->dirty = true;
+    return true;
 }
 
 
