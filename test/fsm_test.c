@@ -37,6 +37,8 @@ symbol_t fsm_test_symbol[4];
 #include <stdio.h>
 #include <stdint.h>
 
+// This looks unused:
+#if (0)
 static void FSMTest_Print(const fsm_t *fsm) {
     fsm_node_t *nodes[fsm->node_count];
     unsigned int i, j, found;
@@ -148,6 +150,7 @@ static void FSMTest_Print(const fsm_t *fsm) {
         }
     }
 }
+#endif
 
 int FSMTest_Create0(void) {
     fsm_t *fsm;

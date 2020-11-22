@@ -22,9 +22,7 @@
  * SOFTWARE.
  */
  
-#ifdef _WIN32
-#define FMT_SIZE "I"
-#endif
+#define FMT_SIZE "z"
 
 #include "../src/search/symbol.c"
  
