@@ -2,6 +2,7 @@
  *   by Alex Chadwick
  * 
  * Copyright (C) 2014, Alex Chadwick
+ * Copyright (C) 2020, Florian Bach
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,15 +33,39 @@
 
 typedef void (*apploader_game_entry_t)(void);
 
+extern event_t apploader_event_got_ios;
+extern event_t apploader_event_got_disc_id;
+extern event_t apploader_event_disc_loading;
+
 extern event_t apploader_event_disk_id;
 extern event_t apploader_event_complete;
+
 extern apploader_game_entry_t apploader_game_entry_fn;
 extern uint8_t *apploader_app0_start;
 extern uint8_t *apploader_app0_end;
 extern uint8_t *apploader_app1_start;
 extern uint8_t *apploader_app1_end;
 
+extern int _apploader_game_ios;
+
+typedef struct {
+    uint32_t offset;
+    uint32_t type;
+} partition_info_t;
+
+typedef struct {
+    uint32_t boot_info_count;
+    uint32_t partition_info_offset;
+} contents_t;
+
+extern partition_info_t *boot_partition;
+extern u32 apploader_ipc_tmd[0x4A00 / 4];
+extern contents_t ipc_toc[4];
+
+
 bool Apploader_Init(void);
-bool Apploader_RunBackground(void);
+bool Apploader_RunBackground(int tryForceIOS);
+bool IOSApploader_Init(void);
+bool IOSApploader_RunBackground(void);
 
 #endif /* APPLOADER_H_ */
