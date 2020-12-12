@@ -185,6 +185,7 @@ static void *Aploader_Main(void *arg) {
         ret = DI_ReadDiscID();
     } while (ret);
 
+    Event_Trigger(&apploader_event_disk_id);
     
     do {
         ret = DI_ReadUnencrypted(ipc_toc, sizeof(ipc_toc), 0x00010000);
