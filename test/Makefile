@@ -55,6 +55,8 @@ LIB_DIRS :=
 # Tests
 TEST     :=
 
+MAKEFLAGS += k
+
 ###############################################################################
 # Rule to make everything.
 PHONY += all
@@ -85,7 +87,7 @@ PHONY += regression
 regression : $(addprefix test_, $(TEST))
 	
 test_% : $(TARGET)
-	$Q{ $(TARGET) $* && echo "Test $* passed"; } || echo "Test $* failed ($$?)"
+	$Q{ $(TARGET) $* && echo "Test $* passed"; } || { echo "Test $* failed ($$?)"; false; }
 
 ###############################################################################
 # Special build rules

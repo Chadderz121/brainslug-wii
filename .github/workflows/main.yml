@@ -39,6 +39,12 @@ jobs:
           tar -xf cache/gamecube-tools-1.0.2-1-linux.pkg.tar.xz opt/devkitpro/tools/bin/elf2dol --strip-components=4
           sudo cp elf2dol /usr/local/bin/elf2dol
           tar -xf cache/ppc-mxml-2.11-2-any.pkg.tar.xz opt/devkitpro/portlibs --strip-components=1
+      
+      - name: Run tests
+        run: |
+          cd test
+          sudo apt install libmxml-dev
+          make
 
       - name: Compile
         run: |
