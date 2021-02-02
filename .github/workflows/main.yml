@@ -16,7 +16,7 @@ jobs:
           path: cache
           key: ${{ runner.os }}-cache-1
 
-      - name: Download devkitPPC r37, libogc 2.1.0, bin2s, elf2dol, ppc-mxml 2.11 and libfat-ogc 1.1.5
+      - name: Download devkitPPC r37, libogc 2.1.0, bin2s, elf2dol, ppc-mxml 2.11, libfat-ogc 1.1.5 and devkitppc-rules 1.1.0
         if: steps.cache-1.outputs.cache-hit != 'true'
         # general-tools is needed for bin2s and gamecube-tools is needed for elf2dol
         run: | 
@@ -27,6 +27,7 @@ jobs:
           wget "https://wii.leseratte10.de/devkitPro/file.php/gamecube-tools-1.0.2-1-linux.pkg.tar.xz"
           wget "https://wii.leseratte10.de/devkitPro/file.php/ppc-mxml-2.11-2-any.pkg.tar.xz"
           wget "https://wii.leseratte10.de/devkitPro/file.php/libfat-ogc-1.1.5-2-any.pkg.tar.xz"
+          wget "https://wii.leseratte10.de/devkitPro/file.php/devkitppc-rules-1.1.0-1-any.pkg.tar.xz"
           cd ..
 
       - name: Extract all the archives
@@ -39,6 +40,7 @@ jobs:
           tar -xf cache/gamecube-tools-1.0.2-1-linux.pkg.tar.xz opt/devkitpro/tools/bin/elf2dol --strip-components=4
           sudo cp elf2dol /usr/local/bin/elf2dol
           tar -xf cache/ppc-mxml-2.11-2-any.pkg.tar.xz opt/devkitpro/portlibs --strip-components=1
+          tar -xf cache/devkitppc-rules-1.1.0-1-any.pkg.tar.xz opt/devkitpro/devkitPPC --strip-components=1
 
       - name: Compile
         run: |
