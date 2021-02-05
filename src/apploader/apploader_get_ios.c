@@ -108,6 +108,8 @@ static void *IOSApploader_Main(void *arg) {
     do {
         ret = DI_Init();
     } while (ret);
+    
+    tryagain: 
 
     // wait until a disc is inserted, 
     // then trigger the loading event, 
@@ -124,9 +126,17 @@ static void *IOSApploader_Main(void *arg) {
     do { 
         ret = DI_Only_Reset(); 
     } while (ret); 
-
+    
     do {
         ret = DI_ReadDiscID();
+        if (ret) { 
+            if (DI_DiscInserted() != 1) {
+                // If the disc's missing, start over
+                usleep(2000);
+                goto tryagain;
+            }
+            usleep(2000);
+        }
     } while (ret);
         
     Event_Trigger(&apploader_event_got_disc_id);
