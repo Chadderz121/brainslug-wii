@@ -189,7 +189,7 @@ static void *Aploader_Main(void *arg) {
     
     do {
         ret = DI_ReadUnencrypted(ipc_toc, sizeof(ipc_toc), 0x00010000);
-    } while (ret < 0);
+    } while (ret != 1);
 
     DCInvalidateRange(ipc_toc, sizeof(ipc_toc));
     
@@ -197,7 +197,7 @@ static void *Aploader_Main(void *arg) {
         ret = DI_ReadUnencrypted(
             ipc_partition_info, sizeof(ipc_partition_info),
             ipc_toc->partition_info_offset);
-    } while (ret < 0);
+    } while (ret != 1);
     
     
     boot_partition = NULL;
@@ -210,7 +210,7 @@ static void *Aploader_Main(void *arg) {
     do {
         ret = DI_PartitionOpen(
             boot_partition->offset, (void *)apploader_ipc_tmd);
-    } while (ret < 0);
+    } while (ret != 1);
     
     #if 0
     /* debugging code */
@@ -229,11 +229,11 @@ static void *Aploader_Main(void *arg) {
     
     do {
         ret = DI_Read(ipc_buffer, sizeof(ipc_buffer), 0x2440 / 4);
-    } while (ret < 0);
+    } while (ret != 1);
     
     do {
         ret = DI_Read((void*)0x81200000, (ipc_buffer[5] + 31) & ~31, 0x2460 / 4);
-    } while (ret < 0);
+    } while (ret != 1);
     
     fn_entry = (apploader_entry_t)ipc_buffer[4];
     
@@ -291,7 +291,7 @@ static void *Aploader_Main(void *arg) {
 
         do {
             ret = DI_Read(destination, length, offset & ~3);
-        } while (ret < 0);
+        } while (ret != 1);
         
         DCFlushRange(destination, length);
     }

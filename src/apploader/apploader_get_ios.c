@@ -133,13 +133,13 @@ static void *IOSApploader_Main(void *arg) {
     
     do {
         ret = DI_ReadUnencrypted(ipc_toc, sizeof(ipc_toc), 0x00010000);
-    } while (ret < 0);
+    } while (ret != 1);
     DCInvalidateRange(ipc_toc, sizeof(ipc_toc));
     do {
         ret = DI_ReadUnencrypted(
             ipc_partition_info, sizeof(ipc_partition_info),
             ipc_toc->partition_info_offset);
-    } while (ret < 0);
+    } while (ret != 1);
     
     boot_partition = NULL;
     for (i = 0; i < ipc_toc->boot_info_count; i++) {
@@ -152,7 +152,7 @@ static void *IOSApploader_Main(void *arg) {
     do {
         ret = DI_PartitionOpen(
             boot_partition->offset, (void *)apploader_ipc_tmd);
-    } while (ret < 0);
+    } while (ret != 1);
     
     // Get IOS information
     {
@@ -174,7 +174,7 @@ static void *IOSApploader_Main(void *arg) {
     // cleanup and close partition again so we don't have to re-init everything. 
     do {
         ret = DI_PartitionClose();
-    } while (ret < 0);
+    } while (ret != 1);
 
     Event_Trigger(&apploader_event_got_ios);
 
