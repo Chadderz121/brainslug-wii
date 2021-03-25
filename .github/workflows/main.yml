@@ -14,7 +14,24 @@ jobs:
 
     - name: Build
       run: |
-        make
+        export BSLUGDIR=$(pwd)blsug
+        make && make install
+        make -C modules
+        make release
+        cp modules/*/bin/*.mod .
 
+    - name: Upload compiled Brainslug binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: brainslug
+        path: |
+          release/apps
+          release/bslug
+          release/readme.txt
 
-            
+    - name: Upload compiled modules
+      uses: actions/upload-artifact@v2
+      with:
+        name: modules
+        path: |
+          *.mod
