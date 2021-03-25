@@ -102,7 +102,7 @@ all : $(TARGET) $(BIN)/boot.elf
 ###############################################################################
 # Install rule
 
-BSLUGDIR := $(DEVKITPRO)/bslug
+BSLUGDIR := $(CURDIR)/bslug
 
 # Rule to install bslug.
 PHONY += install
