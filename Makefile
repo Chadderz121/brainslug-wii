@@ -15,6 +15,8 @@ ifeq ($(strip $(DEVKITPPC)),)
   $(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>devkitPPC")
 endif
 
+BSLUGDIR ?= $(CURDIR)/bslug
+
 include $(DEVKITPPC)/base_tools
 
 PORTLIBS := $(DEVKITPRO)/portlibs/ppc
@@ -101,8 +103,6 @@ all : $(TARGET) $(BIN)/boot.elf
 
 ###############################################################################
 # Install rule
-
-BSLUGDIR := $(CURDIR)/bslug
 
 # Rule to install bslug.
 PHONY += install
