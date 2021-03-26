@@ -11,7 +11,7 @@ include $(DEVKITPPC)/base_tools
 
 LD      := $(PREFIX)ld
 
-FREESTANDING_INC := $(shell LANG=C $(CC) -print-search-dirs | sed -n -e 's/install: \(.*\)/\1/p')
+FREESTANDING_INC := $(shell LANG=C $(DEVKITPPC)/bin/powerpc-eabi-gcc -print-search-dirs | sed -n -e 's/install: \(.*\)/\1/p')
 
 INC_DIRS += $(FREESTANDING_INC)include $(FREESTANDING_INC)include-fixed $(BSLUGDIR)/include
 
