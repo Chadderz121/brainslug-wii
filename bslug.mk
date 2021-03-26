@@ -11,6 +11,10 @@ include $(DEVKITPPC)/base_tools
 
 LD      := $(PREFIX)ld
 
+FREESTANDING_INC := $(shell LANG=C $(CC) -print-search-dirs | sed -n -e 's/install: \(.*\)/\1/p')
+
+INC_DIRS += $(FREESTANDING_INC)include $(FREESTANDING_INC)include-fixed $(BSLUGDIR)/include
+
 # --relocatable: make sure ld doesn't remove relocations bslug will need
 # -s: strip local symbols to speed linking
 # --gc-sections: remove unneeded symbols
@@ -25,8 +29,8 @@ LD1FLAGS += --relocatable -s \
 
 LDFLAGS += $(patsubst %,-l %,$(LIBS)) $(patsubst %,-l %,$(LIBS)) \
            $(patsubst %,-L %,$(LIB_DIRS)) $(patsubst %,-L %/lib,$(LIB_DIRS))
-CFLAGS  += -I $(BSLUGDIR)/include \
-           $(patsubst %,-I %,$(INC_DIRS)) \
+
+CFLAGS  += $(patsubst %,-I %,$(INC_DIRS)) \
            $(patsubst %,-I %/include,$(LIB_DIRS))
 
 # -O2: optimise lots
@@ -46,7 +50,7 @@ CFLAGS  += -I $(BSLUGDIR)/include \
 # -memb: enable embedded application specific compilation
 # -ffunction-sections: split up functions so linker can garbage collect
 # -fdata-sections: split up data so linker can garbage collect
-CFLAGS   += -O2 -Wall -x c -std=gnu99 \
+CFLAGS   += -O2 -Wall -x c -std=gnu99 -nostdinc \
 			-ffreestanding \
             -DGEKKO -DHW_RVL \
             -mrvl -mcpu=750 -meabi -mhard-float -fno-common \
