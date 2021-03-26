@@ -106,7 +106,7 @@ all : $(TARGET) $(BIN)/boot.elf
 
 # Rule to install bslug.
 PHONY += install
-install : bslug_include modules symbols bslug.ld  bslug_elf.ld
+install : bslug_include modules symbols bslug.ld  bslug_elf.ld bslug.mk
 	$(LOG)
 	$(addprefix $Qrm -rf ,$(wildcard $(BSLUGDIR)))
 	$Qmkdir $(BSLUGDIR)
@@ -115,6 +115,7 @@ install : bslug_include modules symbols bslug.ld  bslug_elf.ld
 	$Qcp -r symbols $(BSLUGDIR)
 	$Qcp -r bslug.ld $(BSLUGDIR)
 	$Qcp -r bslug_elf.ld $(BSLUGDIR)
+	$Qcp -r bslug.mk $(BSLUGDIR)
 
 # Rule to install bslug.
 PHONY += uninstall
