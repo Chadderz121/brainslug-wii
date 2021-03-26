@@ -14,48 +14,15 @@ C := ,
 ifeq ($(strip $(DEVKITPPC)),)
   $(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>devkitPPC")
 endif
-ifeq ($(strip $(DEVKITPRO)),)
-  $(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>devkitPRO")
-endif
 
-ifeq ($(OS),Windows_NT)
-  $(info Compiling from $(OS))
+BSLUGDIR ?= $(CURDIR)/bslug
 
-  PORTLIBS := $(DEVKITPRO)/portlibs/ppc
-  PATH := $(DEVKITPPC)/bin:$(PORTLIBS)/bin:$(PATH)
-  ifeq ($(DEVKITPRO),$(subst :, ,$(DEVKITPRO)))
-    DEVKITPRO := $(patsubst /$(firstword $(subst /, ,$(DEVKITPRO)))/%,$(firstword $(subst /, ,$(DEVKITPRO))):/%,$(DEVKITPRO))
-    $(info DEVKITPRO corrected to $(DEVKITPRO))
-  else
-    $(info DEVKITPRO is $(DEVKITPRO))
-  endif
-  PORTLIBS := $(DEVKITPRO)/portlibs/ppc
-  ifeq ($(DEVKITPPC),$(subst :, ,$(DEVKITPPC)))
-    DEVKITPPC := $(patsubst /$(firstword $(subst /, ,$(DEVKITPPC)))/%,$(firstword $(subst /, ,$(DEVKITPPC))):/%,$(DEVKITPPC))
-    $(info DEVKITPPC corrected to $(DEVKITPPC))
-  else
-    $(info DEVKITPPC is $(DEVKITPPC))
-  endif
-else
-  $(info Compiling from Unix)
+include $(DEVKITPPC)/base_tools
 
-  PORTLIBS := $(DEVKITPRO)/portlibs/ppc
-  $(info DEVKITPRO is $(DEVKITPRO))
-  $(info DEVKITPPC is $(DEVKITPPC))
-endif
+PORTLIBS := $(DEVKITPRO)/portlibs/ppc
 
-###############################################################################
-# Compiler settings
-
-# The toolchain to use.
-PREFIX  ?= powerpc-eabi-
-# Tools to use
-AS      := $(PREFIX)as
-LD      := $(PREFIX)g++
-CC      := $(PREFIX)g++
-OBJDUMP := $(PREFIX)objdump
-OBJCOPY := $(PREFIX)objcopy
 ELF2DOL ?= elf2dol
+LD := $(CC)
 
 # -O2: optimise lots
 # -Wl$C--gc-sections: remove unneeded symbols
@@ -124,12 +91,9 @@ SRC      :=
 # Phony targets
 PHONY    :=
 # Include directories
-INC_DIRS := .
+INC_DIRS := . $(DEVKITPRO)/libogc/include $(PORTLIBS)/include
 # Library directories
-LIB_DIRS := $(DEVKITPPC) $(DEVKITPPC)/powerpc-eabi \
-            $(DEVKITPRO)/libogc $(DEVKITPRO)/libogc/lib/wii \
-            $(wildcard $(DEVKITPPC)/lib/gcc/powerpc-eabi/*) \
-            $(PORTLIBS) $(PORTLIBS)/wii
+LIB_DIRS :=  $(DEVKITPRO)/libogc/lib/wii $(PORTLIBS)/lib
 
 ###############################################################################
 # Rule to make everything.
@@ -140,11 +104,9 @@ all : $(TARGET) $(BIN)/boot.elf
 ###############################################################################
 # Install rule
 
-BSLUGDIR := $(DEVKITPRO)/bslug
-
 # Rule to install bslug.
 PHONY += install
-install : bslug_include modules symbols bslug.ld  bslug_elf.ld
+install : bslug_include modules symbols bslug.ld  bslug_elf.ld bslug.mk
 	$(LOG)
 	$(addprefix $Qrm -rf ,$(wildcard $(BSLUGDIR)))
 	$Qmkdir $(BSLUGDIR)
@@ -153,6 +115,7 @@ install : bslug_include modules symbols bslug.ld  bslug_elf.ld
 	$Qcp -r symbols $(BSLUGDIR)
 	$Qcp -r bslug.ld $(BSLUGDIR)
 	$Qcp -r bslug_elf.ld $(BSLUGDIR)
+	$Qcp -r bslug.mk $(BSLUGDIR)
 
 # Rule to install bslug.
 PHONY += uninstall
@@ -186,14 +149,14 @@ include src/makefile.mk
 LDFLAGS += $(patsubst %,-l %,$(LIBS)) $(patsubst %,-l %,$(LIBS)) \
            $(patsubst %,-L %,$(LIB_DIRS)) $(patsubst %,-L %/lib,$(LIB_DIRS))
 CFLAGS  += $(patsubst %,-I %,$(INC_DIRS)) \
-           $(patsubst %,-I %/include,$(LIB_DIRS)) -iquote src
+           -iquote src
 
 OBJECTS := $(patsubst %.c,$(BUILD)/%.c.o,$(filter %.c,$(SRC)))
           
 ifeq ($(words $(filter clean%,$(MAKECMDGOALS))),0)
 ifeq ($(words $(filter install%,$(MAKECMDGOALS))),0)
 ifeq ($(words $(filter uninstall%,$(MAKECMDGOALS))),0)
-  include $(patsubst %.c,$(BUILD)/%.c.d,$(filter %.c,$(SRC)))
+  -include $(patsubst %.c,$(BUILD)/%.c.d,$(filter %.c,$(SRC)))
 endif
 endif
 endif

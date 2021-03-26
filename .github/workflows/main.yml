@@ -1,68 +1,37 @@
-name: Build binaries
+name: C/C++ CI
 
 on: [push, pull_request]
 
 jobs:
   build:
+    name: ubuntu-18.04
     runs-on: ubuntu-18.04
-    timeout-minutes: 20
+    container: devkitpro/devkitppc:latest
+ 
     steps:
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v1
 
-      - name: Cache
-        id: cache-1
-        uses: actions/cache@v2
-        with:
-          path: cache
-          key: ${{ runner.os }}-cache-1
 
-      - name: Download devkitPPC r37, libogc 2.1.0, bin2s, elf2dol, ppc-mxml 2.11 and libfat-ogc 1.1.5
-        if: steps.cache-1.outputs.cache-hit != 'true'
-        # general-tools is needed for bin2s and gamecube-tools is needed for elf2dol
-        run: | 
-          mkdir cache && cd cache
-          wget "https://wii.leseratte10.de/devkitPro/file.php/devkitPPC-r37-4-linux.pkg.tar.xz"
-          wget "https://wii.leseratte10.de/devkitPro/file.php/libogc-2.1.0-1-any.pkg.tar.xz"
-          wget "https://wii.leseratte10.de/devkitPro/file.php/general-tools-1.2.0-1-linux.pkg.tar.xz"
-          wget "https://wii.leseratte10.de/devkitPro/file.php/gamecube-tools-1.0.2-1-linux.pkg.tar.xz"
-          wget "https://wii.leseratte10.de/devkitPro/file.php/ppc-mxml-2.11-2-any.pkg.tar.xz"
-          wget "https://wii.leseratte10.de/devkitPro/file.php/libfat-ogc-1.1.5-2-any.pkg.tar.xz"
-          cd ..
+    - name: Build
+      run: |
+        export BSLUGDIR=$(pwd)blsug
+        make && make install
+        make -C modules
+        make release
+        cp modules/*/bin/*.mod .
 
-      - name: Extract all the archives
-        run: | 
-          tar -xf cache/devkitPPC-r37-4-linux.pkg.tar.xz opt/devkitpro/devkitPPC --strip-components=1
-          tar -xf cache/libogc-2.1.0-1-any.pkg.tar.xz opt/devkitpro/libogc --strip-components=1
-          tar -xf cache/libfat-ogc-1.1.5-2-any.pkg.tar.xz opt/devkitpro/libogc --strip-components=1
-          tar -xf cache/general-tools-1.2.0-1-linux.pkg.tar.xz opt/devkitpro/tools/bin/bin2s --strip-components=4
-          sudo cp bin2s /usr/local/bin/bin2s
-          tar -xf cache/gamecube-tools-1.0.2-1-linux.pkg.tar.xz opt/devkitpro/tools/bin/elf2dol --strip-components=4
-          sudo cp elf2dol /usr/local/bin/elf2dol
-          tar -xf cache/ppc-mxml-2.11-2-any.pkg.tar.xz opt/devkitpro/portlibs --strip-components=1
+    - name: Upload compiled Brainslug binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: brainslug
+        path: |
+          release/apps
+          release/bslug
+          release/readme.txt
 
-      - name: Compile
-        run: |
-          PATH=$(pwd)/devkitpro/devkitPPC/bin:$PATH DEVKITPPC=$(pwd)/devkitpro/devkitPPC DEVKITPRO=$(pwd)/devkitpro make install
-          cd modules
-          PATH=$(pwd)/../devkitpro/devkitPPC/bin:$PATH DEVKITPPC=$(pwd)/../devkitpro/devkitPPC DEVKITPRO=$(pwd)/../devkitpro make 
-          cd ..
-          PATH=$(pwd)/devkitpro/devkitPPC/bin:$PATH DEVKITPPC=$(pwd)/devkitpro/devkitPPC DEVKITPRO=$(pwd)/devkitpro make 
-          PATH=$(pwd)/devkitpro/devkitPPC/bin:$PATH DEVKITPPC=$(pwd)/devkitpro/devkitPPC DEVKITPRO=$(pwd)/devkitpro make release
-          cp modules/*/bin/*.mod .
-
-      - name: Upload compiled Brainslug binaries
-        uses: actions/upload-artifact@v2
-        with: 
-          name: brainslug
-          path: |
-            release/apps
-            release/bslug
-            release/readme.txt
-
-      - name: Upload compiled modules
-        uses: actions/upload-artifact@v2
-        with: 
-          name: modules
-          path: |
-            *.mod
-            
+    - name: Upload compiled modules
+      uses: actions/upload-artifact@v2
+      with:
+        name: modules
+        path: |
+          *.mod
