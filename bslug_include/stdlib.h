@@ -30,4 +30,6 @@
 
 #define MB_CUR_MAX 6
 
+double atof (const char* str);
+
 #endif /* _STDLIB_H_ */
