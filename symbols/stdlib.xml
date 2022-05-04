@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbols in the standard stdlib.h header -->
+<symbols>
+    <symbol name="atof" size="0x58" offset="0x1C" >
+        <data>
+            90 61 00 10 3c 60 80 00 38 63 ff ff
+        </data>
+    </symbol>
+</symbols>
